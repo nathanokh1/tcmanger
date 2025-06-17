@@ -1,0 +1,23 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[environments.production]
+[environments.production.variables]
+NODE_ENV = "production"
+
+[environments.development]
+[environments.development.variables]
+NODE_ENV = "development"
+
+# Service configuration
+[[services]]
+name = "tcmanager"
+source = "." 

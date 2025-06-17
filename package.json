@@ -1,0 +1,36 @@
+{
+  "name": "tcmanager",
+  "version": "1.0.0",
+  "description": "Advanced Test Case Management Platform",
+  "main": "server/dist/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "build": "npm run server:build && npm run client:build",
+    "start": "node server/dist/index.js",
+    "server:dev": "cd server && npm run dev",
+    "server:build": "cd server && npm run build",
+    "client:dev": "cd client && npm run dev",
+    "client:build": "cd client && npm run build",
+    "test": "npm run server:test && npm run client:test",
+    "server:test": "cd server && npm test",
+    "client:test": "cd client && npm test",
+    "setup": "npm install && cd server && npm install && cd ../client && npm install",
+    "railway:build": "npm run build",
+    "railway:start": "npm start"
+  },
+  "keywords": [
+    "test-management",
+    "qa",
+    "testing",
+    "automation",
+    "playwright"
+  ],
+  "author": "TCM Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 

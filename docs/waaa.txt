@@ -1,0 +1,1 @@
+MONGODB_URI=mongodb+srv://admin:Password1234@ncluster0.2ac9d.mongodb.net/MyFinDB?retryWrites=true&w=majority&appName=NCluster0

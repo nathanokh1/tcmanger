@@ -1,0 +1,52 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Test Case Management (TCM) Project Cursor Rules
+
+1. **.env File Changes**: When changing, adding, or modifying a `.env` file, always note:
+   - What is being changed (variable name, value, purpose)
+   - How the user should make the change (step-by-step if needed)
+   - Where else manual modifications are required (e.g., deployment, documentation, code references)
+
+2. **Error/Bug Handling**: When the user provides an error code or bug:
+   - Analyze the error/bug in detail
+   - Provide a fix, observations, and/or options/recommendations to resolve it
+   - Explain the reasoning behind the fix or recommendations
+
+3. **Test Driven Development  + Documentation(TDD+D)**:
+   - Default to a TDD process: write or update tests before implementing features or bug fixes
+   - Ensure all new features and bug fixes are covered by tests
+   - Document test coverage and how to run tests
+   - Document each feature set, script, and update.
+
+4. **Persistent Memory Requests**:
+   - When the user says "I need you to recall...", "I need you to remember...", or "remember to...":
+     - Add these items to this cursor rules/doc for the project
+     - Treat these as persistent project rules or reminders
+5. **Powershell runs and .env**:
+   - The token '&&' is not a valid statement separator in this version, use ';' instead.
+   - All .env work needs to be maintained in the root directory. the .env_server and .env_client are placeholders, ignore them.
+6. **.env Exists in Root**:
+- .env is on the ignore list for you. it can be found in the root folder of this project. reference it that way.
+
+7. **Styling:**
+- Futuristic, multiple style theming.
+- Mobile friendly in mind.  
+ 
+
+8. **Documentation**
+- For every file you generate or update, create/update the corresponding documentation. When updating/modify documents delete content should be a last result or only if needed. Always build onto the doc.
+- After we complete a feature set or feature/Todo/Roadmap goal update the documentation accordingly. 
+- When updating always document/write update with the document, dont delete text unless necessary. We want to see how things flow, if things change note that (cross it out if you must).
+> This file must be referenced for all project-specific workflows and assistant behavior for TheWallet.
+
+9. **Fix Scripts and Development Tools**:
+- When creating fix scripts, debugging tools, analysis scripts, or development utilities, place them in the `fixscripts/` folder
+- All temporary solutions, deployment scripts, and diagnostic tools should be organized in `fixscripts/`
+- Include documentation for each script explaining its purpose, usage, and any requirements
+
+10. **Dev to Production Architecture**
+- Dev, Test, Production architecture. For now we can work for Dev being locally accessible. Test being setup in Railway, and we will get to production when we get there...
+

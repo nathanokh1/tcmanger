@@ -5,6 +5,7 @@ import compression from 'compression';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 
 import { logger } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
@@ -73,13 +74,25 @@ app.use('/api/testcases', testCaseRoutes);
 app.use('/api/testruns', testRunRoutes);
 app.use('/api/users', userRoutes);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `Route ${req.originalUrl} not found`,
+// Serve static files from the React app build
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientBuildPath));
+  
+  // Catch all handler: send back React's index.html file for client-side routing
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
   });
-});
+} else {
+  // Development mode - API only
+  app.use('*', (req, res) => {
+    res.status(404).json({
+      error: 'Not Found',
+      message: `Route ${req.originalUrl} not found`,
+      note: 'In development mode - frontend should be served separately'
+    });
+  });
+}
 
 // Error handling middleware
 app.use(errorHandler);

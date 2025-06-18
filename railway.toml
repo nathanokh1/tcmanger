@@ -17,7 +17,14 @@ NODE_ENV = "production"
 [environments.development.variables]
 NODE_ENV = "development"
 
-# Service configuration
+# Backend service configuration
 [[services]]
-name = "tcmanager"
-source = "." 
+name = "tcmanager-backend"
+source = "."
+command = "npm run server:prod"
+
+# Frontend service configuration  
+[[services]]
+name = "tcmanager-frontend"
+source = "./client"
+command = "npm run start" 

@@ -112,9 +112,12 @@ Expected response:
 
 ### Common Issues
 1. **Build fails**: Check package.json scripts
-2. **Database connection fails**: Verify MONGODB_URI
-3. **Port issues**: Railway automatically assigns PORT
-4. **CORS errors**: Update CLIENT_URL environment variable
+2. **TypeScript compilation fails**: `tsc: not found`
+   - **Solution**: TypeScript moved to `dependencies` in server/package.json
+   - **Reason**: Railway production builds don't install devDependencies
+3. **Database connection fails**: Verify MONGODB_URI
+4. **Port issues**: Railway automatically assigns PORT
+5. **CORS errors**: Update CLIENT_URL environment variable
 
 ### Logs
 View deployment logs:

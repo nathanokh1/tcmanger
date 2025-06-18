@@ -79,8 +79,8 @@ export default function DashboardPage() {
   const navigationItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { id: 'projects', label: 'Projects', icon: <ProjectIcon />, path: '/projects' },
-    { id: 'testcases', label: 'Test Cases', icon: <TestCaseIcon />, path: '/testcases' },
-    { id: 'testruns', label: 'Test Runs', icon: <RunIcon />, path: '/testruns' },
+    { id: 'testcases', label: 'Test Cases', icon: <TestCaseIcon />, path: '/test-cases' },
+    { id: 'testruns', label: 'Test Runs', icon: <RunIcon />, path: '/test-runs' },
     { id: 'reports', label: 'Reports', icon: <ReportsIcon />, path: '/reports' },
     { id: 'settings', label: 'Settings', icon: <SettingsIcon />, path: '/settings' }
   ];
@@ -159,11 +159,15 @@ export default function DashboardPage() {
             <ListItem
               key={item.id}
               button
-              onClick={() => setSelectedMenuItem(item.id)}
+              onClick={() => {
+                setSelectedMenuItem(item.id);
+                router.push(item.path);
+              }}
               sx={{
                 borderRadius: 2,
                 mb: 0.5,
-                backgroundColor: selectedMenuItem === item.id ? alpha('#667eea', 0.2) : 'transparent'
+                backgroundColor: selectedMenuItem === item.id ? alpha('#667eea', 0.2) : 'transparent',
+                cursor: 'pointer'
               }}
             >
               <ListItemIcon sx={{ color: selectedMenuItem === item.id ? '#667eea' : 'grey.400', minWidth: 40 }}>

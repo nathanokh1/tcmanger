@@ -1,10 +1,23 @@
-import { Router } from 'express';
+import express from 'express';
+import { ProjectController } from '../controllers/ProjectController';
+import { authMiddleware } from '../middleware/auth';
+import { validateProjectCreation, validateProjectUpdate } from '../validators/project';
 
-const router = Router();
+const router = express.Router();
 
-// Placeholder routes - will be implemented
-router.get('/', (req, res) => {
-  res.json({ message: 'Projects endpoint - coming soon' });
-});
+// Apply authentication middleware to all routes
+router.use(authMiddleware);
 
-export { router as projectRoutes }; 
+// Project CRUD routes
+router.get('/', ProjectController.getAllProjects);
+router.get('/:id', ProjectController.getProjectById);
+router.post('/', validateProjectCreation, ProjectController.createProject);
+router.put('/:id', validateProjectUpdate, ProjectController.updateProject);
+router.delete('/:id', ProjectController.deleteProject);
+
+// Team management routes
+router.post('/:id/members', ProjectController.addTeamMember);
+router.delete('/:id/members/:memberId', ProjectController.removeTeamMember);
+router.put('/:id/members/:memberId/role', ProjectController.updateTeamMemberRole);
+
+export default router; 

@@ -108,16 +108,47 @@ Expected response:
 }
 ```
 
+## ✅ Deployment Success - Option C Architecture
+
+### **Production Deployment Complete**
+- **URL**: https://tcmanger-production.up.railway.app
+- **Architecture**: Single service deployment (Frontend + Backend)
+- **Status**: ✅ Fully operational
+
+### **How Option C Works**
+1. **Frontend**: Next.js static export served by Express
+2. **Backend**: Express API routes at `/api/*`
+3. **Routing**: Express serves React app for all non-API routes
+4. **Benefits**: No CORS issues, single deployment, cost-effective
+
 ## Troubleshooting
 
-### Common Issues
-1. **Build fails**: Check package.json scripts
-2. **TypeScript compilation fails**: `tsc: not found`
-   - **Solution**: TypeScript moved to `dependencies` in server/package.json
+### ✅ Issues Resolved
+1. **TypeScript compilation fails**: `tsc: not found`
+   - **Solution**: Moved TypeScript to `dependencies` in server/package.json
    - **Reason**: Railway production builds don't install devDependencies
-3. **Database connection fails**: Verify MONGODB_URI
-4. **Port issues**: Railway automatically assigns PORT
-5. **CORS errors**: Update CLIENT_URL environment variable
+
+2. **npm ci lockfile error**: `package-lock.json not found`
+   - **Solution**: Switched from `npm ci` to `npm install` in postinstall script
+   - **Reason**: package-lock.json files were ignored by .gitignore
+
+3. **Nixpacks configuration error**: `undefined variable 'npm'`
+   - **Solution**: Removed custom nixpacks.toml, using Railway's default detection
+   - **Reason**: Invalid nixpacks syntax for npm package
+
+4. **Material-UI SSR error**: `createTheme() from server`
+   - **Solution**: Created client-side ThemeProvider component with 'use client' directive
+   - **Reason**: Next.js 14 App Router server/client component separation
+
+5. **Redux store warning**: `Store does not have a valid reducer`
+   - **Solution**: Added app slice with valid reducer to Redux store
+   - **Reason**: Empty reducer object not allowed
+
+### Common Issues (If They Occur)
+1. **Build fails**: Check package.json scripts
+2. **Database connection fails**: Verify MONGODB_URI
+3. **Port issues**: Railway automatically assigns PORT
+4. **Frontend not loading**: Check static file serving in Express
 
 ### Logs
 View deployment logs:

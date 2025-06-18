@@ -1,9 +1,17 @@
-import { Router } from 'express';
+import express from 'express';
+import { TestCaseController } from '../controllers/TestCaseController';
+import { authMiddleware } from '../middleware/auth';
 
-const router = Router();
+const router = express.Router();
 
-router.get('/', (req, res) => {
-  res.json({ message: 'Test Cases endpoint - coming soon' });
-});
+// Apply authentication middleware to all routes
+router.use(authMiddleware);
 
-export { router as testCaseRoutes }; 
+// Test Case CRUD routes
+router.get('/', TestCaseController.getAllTestCases);
+router.get('/:id', TestCaseController.getTestCaseById);
+router.post('/', TestCaseController.createTestCase);
+router.put('/:id', TestCaseController.updateTestCase);
+router.delete('/:id', TestCaseController.deleteTestCase);
+
+export default router; 

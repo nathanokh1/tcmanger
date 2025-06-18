@@ -44,33 +44,38 @@ A modern, full-stack test case management platform built for QA teams and develo
    - Backend API: http://localhost:3000
    - Health Check: http://localhost:3000/health
 
-### Railway Deployment
+### ✅ Production Deployment (Railway)
 
-1. **Connect to Railway**
+**🌐 Live Application**: https://tcmanger-production.up.railway.app
+
+**Architecture**: Option C - Single Service Deployment
+- Frontend: Next.js static export served by Express
+- Backend: Express API routes at `/api/*`  
+- Database: MongoDB Atlas cloud database
+- Benefits: Cost-effective, no CORS issues, simplified management
+
+1. **Automatic Deployment**
+   ```bash
+   # Deployment is automatic via GitHub integration
+   git push origin master  # Triggers Railway build and deploy
+   ```
+
+2. **Manual Railway CLI (Optional)**
    ```bash
    # Install Railway CLI
    npm install -g @railway/cli
    
-   # Login and link project
+   # Login and deploy
    railway login
-   railway link
-   ```
-
-2. **Deploy**
-   ```bash
-   # Deploy to Railway
    railway up
-   
-   # Or use automatic deployment via GitHub integration
    ```
 
-3. **Environment Variables**
+3. **Environment Variables (Production)**
    Set these in Railway dashboard:
    ```
    NODE_ENV=production
-   MONGODB_URI=<your-mongodb-atlas-uri>
-   JWT_SECRET=<your-production-secret>
-   CLIENT_URL=<your-railway-frontend-url>
+   MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/tcmanager
+   JWT_SECRET=your-secure-32-character-secret-key
    ```
 
 ## 🏗️ Architecture

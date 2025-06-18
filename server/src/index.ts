@@ -10,8 +10,8 @@ import path from 'path';
 import { logger } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
-import { projectRoutes } from './routes/projects';
-import { testCaseRoutes } from './routes/testCases';
+import projectRoutes from './routes/projects';
+import testCaseRoutes from './routes/testCases';
 import { testRunRoutes } from './routes/testRuns';
 import { userRoutes } from './routes/users';
 

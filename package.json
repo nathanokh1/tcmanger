@@ -5,8 +5,9 @@
   "main": "server/dist/index.js",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
-    "build": "npm run server:build && npm run client:build",
+    "build": "npm run install:all && npm run server:build && npm run client:build",
     "start": "node server/dist/index.js",
+    "install:all": "cd server && npm ci && cd ../client && npm ci",
     "server:dev": "cd server && npm run dev",
     "server:build": "cd server && npm run build",
     "client:dev": "cd client && npm run dev",
@@ -15,6 +16,7 @@
     "server:test": "cd server && npm test",
     "client:test": "cd client && npm test",
     "setup": "npm install && cd server && npm install && cd ../client && npm install",
+    "postinstall": "cd server && npm ci && cd ../client && npm ci",
     "railway:build": "npm run build",
     "railway:start": "npm start"
   },
@@ -27,6 +29,9 @@
   ],
   "author": "TCM Team",
   "license": "MIT",
+  "dependencies": {
+    "typescript": "^5.3.3"
+  },
   "devDependencies": {
     "concurrently": "^8.2.2"
   },

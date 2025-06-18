@@ -4,20 +4,18 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IFeature extends Document {
   name: string;
   description: string;
+  projectId: mongoose.Types.ObjectId;
   moduleId: mongoose.Types.ObjectId;
-  projectId: mongoose.Types.ObjectId; // For easier querying
-  priority: 'High' | 'Medium' | 'Low';
   status: 'Active' | 'Deprecated' | 'Archived';
-  testCases: string[]; // Array of TestCase IDs
+  priority: 'Low' | 'Medium' | 'High' | 'Critical';
   requirements: {
     id: string;
-    title: string;
-    source: 'Jira' | 'ServiceNow' | 'Manual';
-    url?: string;
+    description: string;
+    type: 'Functional' | 'Non-Functional' | 'Business';
   }[];
+  effortEstimate: number; // Story points or hours
   tags: string[];
-  estimatedEffort: number; // In hours
-  actualEffort?: number; // In hours
+  testCases: string[]; // Array of TestCase IDs
   createdAt: Date;
   updatedAt: Date;
   createdBy: mongoose.Types.ObjectId;
@@ -30,65 +28,58 @@ const FeatureSchema = new Schema<IFeature>({
     type: String,
     required: true,
     trim: true,
-    maxlength: 150
+    maxlength: 100
   },
   description: {
     type: String,
     trim: true,
-    maxlength: 1000
-  },
-  moduleId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Module',
-    required: true,
-    index: true
+    maxlength: 500
   },
   projectId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',
-    required: true,
-    index: true
+    required: true
   },
-  priority: {
-    type: String,
-    enum: ['High', 'Medium', 'Low'],
-    default: 'Medium'
+  moduleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Module',
+    required: true
   },
   status: {
     type: String,
     enum: ['Active', 'Deprecated', 'Archived'],
     default: 'Active'
   },
-  testCases: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'TestCase'
-  }],
+  priority: {
+    type: String,
+    enum: ['Low', 'Medium', 'High', 'Critical'],
+    default: 'Medium'
+  },
   requirements: [{
     id: {
       type: String,
       required: true
     },
-    title: {
+    description: {
       type: String,
       required: true
     },
-    source: {
+    type: {
       type: String,
-      enum: ['Jira', 'ServiceNow', 'Manual'],
-      required: true
-    },
-    url: String
+      enum: ['Functional', 'Non-Functional', 'Business'],
+      default: 'Functional'
+    }
   }],
-  tags: [String],
-  estimatedEffort: {
+  effortEstimate: {
     type: Number,
-    min: 0,
-    default: 0
-  },
-  actualEffort: {
-    type: Number,
+    default: 0,
     min: 0
   },
+  tags: [String],
+  testCases: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TestCase'
+  }],
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -105,22 +96,16 @@ const FeatureSchema = new Schema<IFeature>({
   toObject: { virtuals: true }
 });
 
-// Indexes for performance
-FeatureSchema.index({ moduleId: 1 });
+// Indexes for performance (removed duplicates to fix mongoose warnings)
 FeatureSchema.index({ projectId: 1 });
-FeatureSchema.index({ priority: 1 });
+FeatureSchema.index({ moduleId: 1 });
 FeatureSchema.index({ status: 1 });
+FeatureSchema.index({ priority: 1 });
 FeatureSchema.index({ createdAt: -1 });
 
 // Virtual for test case count
 FeatureSchema.virtual('testCaseCount').get(function() {
   return this.testCases.length;
-});
-
-// Virtual for completion percentage
-FeatureSchema.virtual('completionPercentage').get(function() {
-  if (this.estimatedEffort === 0) return 0;
-  return Math.round(((this.actualEffort || 0) / this.estimatedEffort) * 100);
 });
 
 // Compound unique index for name within module

@@ -1,116 +1,68 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 // Test Step Interface
-interface ITestStep {
-  order: number;
-  description: string;
+interface TestStep {
+  stepNumber: number;
+  action: string;
   expectedResult: string;
-  automationCommand?: string;
   attachments?: string[];
+}
+
+// Automation Script Interface
+interface AutomationScript {
+  framework: 'Playwright' | 'Selenium' | 'Cypress' | 'Jest' | 'Other';
+  language: 'JavaScript' | 'TypeScript' | 'Python' | 'Java' | 'C#';
+  script: string;
+  version: string;
+  lastModified: Date;
+  modifiedBy: mongoose.Types.ObjectId;
 }
 
 // Test Case Interface
 export interface ITestCase extends Document {
-  testCaseId: string; // Auto-generated unique ID (e.g., TC-001)
   title: string;
   description: string;
-  featureId: mongoose.Types.ObjectId;
-  moduleId: mongoose.Types.ObjectId;
   projectId: mongoose.Types.ObjectId;
-  priority: 'Critical' | 'High' | 'Medium' | 'Low';
-  type: 'Functional' | 'Integration' | 'Performance' | 'Security' | 'UI' | 'API' | 'E2E';
-  status: 'Draft' | 'Active' | 'Deprecated' | 'Under Review' | 'Approved';
-  automationType: 'Manual' | 'Automated' | 'Semi-Automated';
-  
-  // TestRail-style test structure
-  preconditions: string;
-  steps: ITestStep[];
-  expectedResults: string[];
-  
-  // Jira-style linking
-  linkedItems: {
-    type: 'Requirement' | 'Defect' | 'Story' | 'Epic';
+  moduleId: mongoose.Types.ObjectId;
+  featureId?: mongoose.Types.ObjectId;
+  type: 'Functional' | 'Integration' | 'Unit' | 'E2E' | 'Performance' | 'Security' | 'Accessibility';
+  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  status: 'Draft' | 'Active' | 'Deprecated' | 'Archived';
+  complexity: 'Low' | 'Medium' | 'High';
+  estimatedDuration: number; // In minutes
+  preconditions: string[];
+  steps: TestStep[];
+  postconditions: string[];
+  tags: string[];
+  linkedRequirements: {
     id: string;
     title: string;
-    url?: string;
     source: 'Jira' | 'ServiceNow' | 'Manual';
+    url?: string;
   }[];
-  
-  // ServiceNow-style workflow
+  linkedDefects: {
+    id: string;
+    title: string;
+    status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
+    source: 'Jira' | 'ServiceNow' | 'Manual';
+    url?: string;
+  }[];
+  automationScript?: AutomationScript;
   approvalHistory: {
     action: 'Submitted' | 'Approved' | 'Rejected' | 'Updated';
-    userId: mongoose.Types.ObjectId;
-    comment?: string;
+    by: mongoose.Types.ObjectId;
     timestamp: Date;
+    comments?: string;
   }[];
-  
-  // Automation details
-  automationScript?: {
-    framework: 'Playwright' | 'Selenium' | 'Cypress' | 'Jest' | 'Custom';
-    scriptPath: string;
-    repository: string;
-    branch: string;
-    lastUpdated: Date;
-  };
-  
-  // Execution tracking
-  lastExecutionResult?: {
-    status: 'Pass' | 'Fail' | 'Blocked' | 'Skipped';
-    executedBy: mongoose.Types.ObjectId;
-    executedAt: Date;
-    environment: string;
-    duration?: number; // in milliseconds
-    screenshots?: string[];
-    logs?: string;
-  };
-  
-  // Metadata
-  tags: string[];
-  estimatedDuration: number; // in minutes
-  complexity: 'Simple' | 'Medium' | 'Complex';
   assignedTo?: mongoose.Types.ObjectId;
-  reviewedBy?: mongoose.Types.ObjectId;
-  reviewedAt?: Date;
-  
   createdAt: Date;
   updatedAt: Date;
   createdBy: mongoose.Types.ObjectId;
   updatedBy: mongoose.Types.ObjectId;
 }
 
-// Test Step Schema
-const TestStepSchema = new Schema<ITestStep>({
-  order: {
-    type: Number,
-    required: true
-  },
-  description: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 500
-  },
-  expectedResult: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 500
-  },
-  automationCommand: {
-    type: String,
-    trim: true
-  },
-  attachments: [String]
-}, { _id: false });
-
 // Test Case Schema
 const TestCaseSchema = new Schema<ITestCase>({
-  testCaseId: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true
-  },
   title: {
     type: String,
     required: true,
@@ -122,133 +74,125 @@ const TestCaseSchema = new Schema<ITestCase>({
     trim: true,
     maxlength: 1000
   },
-  featureId: {
+  projectId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Feature',
-    required: true,
-    index: true
+    ref: 'Project',
+    required: true
   },
   moduleId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Module',
-    required: true,
-    index: true
+    required: true
   },
-  projectId: {
+  featureId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',
-    required: true,
-    index: true
-  },
-  priority: {
-    type: String,
-    enum: ['Critical', 'High', 'Medium', 'Low'],
-    default: 'Medium'
+    ref: 'Feature'
   },
   type: {
     type: String,
-    enum: ['Functional', 'Integration', 'Performance', 'Security', 'UI', 'API', 'E2E'],
-    default: 'Functional'
+    enum: ['Functional', 'Integration', 'Unit', 'E2E', 'Performance', 'Security', 'Accessibility'],
+    required: true
+  },
+  priority: {
+    type: String,
+    enum: ['Low', 'Medium', 'High', 'Critical'],
+    default: 'Medium'
   },
   status: {
     type: String,
-    enum: ['Draft', 'Active', 'Deprecated', 'Under Review', 'Approved'],
+    enum: ['Draft', 'Active', 'Deprecated', 'Archived'],
     default: 'Draft'
   },
-  automationType: {
+  complexity: {
     type: String,
-    enum: ['Manual', 'Automated', 'Semi-Automated'],
-    default: 'Manual'
+    enum: ['Low', 'Medium', 'High'],
+    default: 'Medium'
   },
-  preconditions: {
-    type: String,
-    trim: true
+  estimatedDuration: {
+    type: Number,
+    default: 15,
+    min: 1
   },
-  steps: [TestStepSchema],
-  expectedResults: [String],
-  linkedItems: [{
-    type: {
-      type: String,
-      enum: ['Requirement', 'Defect', 'Story', 'Epic'],
+  preconditions: [String],
+  steps: [{
+    stepNumber: {
+      type: Number,
       required: true
     },
-    id: {
+    action: {
       type: String,
-      required: true
+      required: true,
+      maxlength: 500
     },
-    title: {
+    expectedResult: {
       type: String,
-      required: true
+      required: true,
+      maxlength: 500
     },
-    url: String,
+    attachments: [String]
+  }],
+  postconditions: [String],
+  tags: [String],
+  linkedRequirements: [{
+    id: String,
+    title: String,
     source: {
       type: String,
-      enum: ['Jira', 'ServiceNow', 'Manual'],
-      required: true
-    }
+      enum: ['Jira', 'ServiceNow', 'Manual']
+    },
+    url: String
   }],
+  linkedDefects: [{
+    id: String,
+    title: String,
+    status: {
+      type: String,
+      enum: ['Open', 'In Progress', 'Resolved', 'Closed']
+    },
+    source: {
+      type: String,
+      enum: ['Jira', 'ServiceNow', 'Manual']
+    },
+    url: String
+  }],
+  automationScript: {
+    framework: {
+      type: String,
+      enum: ['Playwright', 'Selenium', 'Cypress', 'Jest', 'Other']
+    },
+    language: {
+      type: String,
+      enum: ['JavaScript', 'TypeScript', 'Python', 'Java', 'C#']
+    },
+    script: String,
+    version: String,
+    lastModified: Date,
+    modifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  },
   approvalHistory: [{
     action: {
       type: String,
       enum: ['Submitted', 'Approved', 'Rejected', 'Updated'],
       required: true
     },
-    userId: {
+    by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true
     },
-    comment: String,
     timestamp: {
       type: Date,
       default: Date.now
-    }
+    },
+    comments: String
   }],
-  automationScript: {
-    framework: {
-      type: String,
-      enum: ['Playwright', 'Selenium', 'Cypress', 'Jest', 'Custom']
-    },
-    scriptPath: String,
-    repository: String,
-    branch: String,
-    lastUpdated: Date
-  },
-  lastExecutionResult: {
-    status: {
-      type: String,
-      enum: ['Pass', 'Fail', 'Blocked', 'Skipped']
-    },
-    executedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    executedAt: Date,
-    environment: String,
-    duration: Number,
-    screenshots: [String],
-    logs: String
-  },
-  tags: [String],
-  estimatedDuration: {
-    type: Number,
-    min: 0,
-    default: 5 // 5 minutes default
-  },
-  complexity: {
-    type: String,
-    enum: ['Simple', 'Medium', 'Complex'],
-    default: 'Medium'
-  },
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
-  reviewedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  reviewedAt: Date,
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -265,58 +209,27 @@ const TestCaseSchema = new Schema<ITestCase>({
   toObject: { virtuals: true }
 });
 
-// Indexes for performance
-TestCaseSchema.index({ testCaseId: 1 });
-TestCaseSchema.index({ projectId: 1, status: 1 });
+// Indexes for performance (removed duplicates to fix mongoose warnings)
+TestCaseSchema.index({ projectId: 1 });
+TestCaseSchema.index({ moduleId: 1 });
 TestCaseSchema.index({ featureId: 1 });
-TestCaseSchema.index({ assignedTo: 1 });
+TestCaseSchema.index({ type: 1 });
 TestCaseSchema.index({ priority: 1 });
-TestCaseSchema.index({ automationType: 1 });
+TestCaseSchema.index({ status: 1 });
+TestCaseSchema.index({ assignedTo: 1 });
 TestCaseSchema.index({ createdAt: -1 });
 
-// Text index for search
-TestCaseSchema.index({
-  title: 'text',
-  description: 'text',
-  tags: 'text'
+// Virtual for automation status
+TestCaseSchema.virtual('isAutomated').get(function() {
+  return !!this.automationScript;
 });
 
-// Virtual for step count
-TestCaseSchema.virtual('stepCount').get(function() {
-  return this.steps.length;
-});
-
-// Virtual for automation percentage
-TestCaseSchema.virtual('automationPercentage').get(function() {
-  if (this.steps.length === 0) return 0;
-  const automatedSteps = this.steps.filter(step => step.automationCommand).length;
-  return Math.round((automatedSteps / this.steps.length) * 100);
-});
-
-// Pre-save middleware to generate testCaseId
-TestCaseSchema.pre('save', async function(next) {
-  if (!this.testCaseId) {
-    // Get project to use its prefix
-    const project = await mongoose.model('Project').findById(this.projectId);
-    const prefix = project?.settings?.testCasePrefix || 'TC';
-    
-    // Find the last test case ID for this project
-    const lastTestCase = await mongoose.model('TestCase')
-      .findOne({ projectId: this.projectId })
-      .sort({ testCaseId: -1 })
-      .select('testCaseId');
-    
-    let nextNumber = 1;
-    if (lastTestCase && lastTestCase.testCaseId) {
-      const match = lastTestCase.testCaseId.match(/(\d+)$/);
-      if (match) {
-        nextNumber = parseInt(match[1]) + 1;
-      }
-    }
-    
-    this.testCaseId = `${prefix}-${nextNumber.toString().padStart(3, '0')}`;
-  }
-  next();
+// Virtual for approval status
+TestCaseSchema.virtual('approvalStatus').get(function() {
+  if (this.approvalHistory.length === 0) return 'Not Submitted';
+  
+  const lastApproval = this.approvalHistory[this.approvalHistory.length - 1];
+  return lastApproval.action;
 });
 
 export const TestCase = mongoose.model<ITestCase>('TestCase', TestCaseSchema); 

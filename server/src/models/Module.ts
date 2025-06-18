@@ -31,8 +31,7 @@ const ModuleSchema = new Schema<IModule>({
   projectId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',
-    required: true,
-    index: true
+    required: true
   },
   status: {
     type: String,
@@ -64,7 +63,7 @@ const ModuleSchema = new Schema<IModule>({
   toObject: { virtuals: true }
 });
 
-// Indexes for performance
+// Indexes for performance (removed duplicates to fix mongoose warnings)
 ModuleSchema.index({ projectId: 1, order: 1 });
 ModuleSchema.index({ status: 1 });
 ModuleSchema.index({ createdAt: -1 });

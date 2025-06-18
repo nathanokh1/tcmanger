@@ -11,19 +11,4 @@ restartPolicyMaxRetries = 3
 [environments.production]
 [environments.production.variables]
 NODE_ENV = "production"
-
-[environments.development]
-[environments.development.variables]
-NODE_ENV = "development"
-
-# Backend service configuration
-[[services]]
-name = "tcmanager-backend"
-source = "."
-command = "npm run server:prod"
-
-# Frontend service configuration  
-[[services]]
-name = "tcmanager-frontend"
-source = "./client"
-command = "npm run start" 
+PORT = "8080" 

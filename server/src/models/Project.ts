@@ -68,8 +68,7 @@ const ProjectSchema = new Schema<IProject>({
     required: true,
     unique: true,
     uppercase: true,
-    match: /^[A-Z]{2,10}$/,
-    index: true
+    match: /^[A-Z]{2,10}$/
   },
   status: {
     type: String,
@@ -163,7 +162,7 @@ const ProjectSchema = new Schema<IProject>({
   toObject: { virtuals: true }
 });
 
-// Indexes for performance
+// Indexes for performance (removed duplicates to fix mongoose warnings)
 ProjectSchema.index({ key: 1 });
 ProjectSchema.index({ status: 1 });
 ProjectSchema.index({ 'teamMembers.userId': 1 });

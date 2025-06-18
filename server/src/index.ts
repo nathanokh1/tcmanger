@@ -19,7 +19,7 @@ import { userRoutes } from './routes/users';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8080 : 3000);
 
 // Trust proxy for Railway deployment
 if (process.env.NODE_ENV === 'production') {
@@ -74,14 +74,71 @@ app.use('/api/testcases', testCaseRoutes);
 app.use('/api/testruns', testRunRoutes);
 app.use('/api/users', userRoutes);
 
-// Serve static files from the React app build
+// Serve static files from the Next.js app build
 if (process.env.NODE_ENV === 'production') {
-  const clientBuildPath = path.join(__dirname, '../../client/dist');
-  app.use(express.static(clientBuildPath));
+  // Serve Next.js static files
+  const clientBuildPath = path.join(__dirname, '../../client/.next/static');
+  const clientPublicPath = path.join(__dirname, '../../client/public');
   
-  // Catch all handler: send back React's index.html file for client-side routing
+  // Serve Next.js static assets
+  app.use('/_next/static', express.static(clientBuildPath));
+  app.use('/static', express.static(clientBuildPath));
+  
+  // Serve public assets
+  app.use(express.static(clientPublicPath));
+  
+  // For all non-API routes, proxy to Next.js or serve a basic HTML
   app.get('*', (req, res) => {
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
+    // Basic HTML page that loads the client-side app
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+          <link rel="icon" href="/favicon.ico" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <meta name="theme-color" content="#000000" />
+          <title>TCManager - Test Case Management</title>
+          <style>
+            body {
+              margin: 0;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              color: white;
+            }
+            .loading {
+              text-align: center;
+            }
+            .spinner {
+              border: 3px solid rgba(255,255,255,0.3);
+              border-radius: 50%;
+              border-top: 3px solid white;
+              width: 40px;
+              height: 40px;
+              animation: spin 1s linear infinite;
+              margin: 20px auto;
+            }
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="loading">
+            <div class="spinner"></div>
+            <h2>TCManager</h2>
+            <p>Advanced Test Case Management Platform</p>
+            <p>Please use the local development environment at <a href="http://localhost:3001" style="color: #fff;">http://localhost:3001</a></p>
+            <p>Or contact your system administrator for the correct URL.</p>
+          </div>
+        </body>
+      </html>
+    `);
   });
 } else {
   // Development mode - API only
@@ -89,7 +146,7 @@ if (process.env.NODE_ENV === 'production') {
     res.status(404).json({
       error: 'Not Found',
       message: `Route ${req.originalUrl} not found`,
-      note: 'In development mode - frontend should be served separately'
+      note: 'In development mode - frontend should be served separately on port 3001'
     });
   });
 }

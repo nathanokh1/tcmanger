@@ -102,6 +102,56 @@
 3. Check for proper indexes
 4. Verify data models match schema
 
+### Content Security Policy (CSP) Errors on Railway Deployment
+
+**Issue**: `Refused to execute inline script because it violates the following Content Security Policy directive: "script-src 'self'"`
+
+**Symptoms**:
+- Application shows "Loading TCManager..." indefinitely
+- Multiple CSP errors in browser console
+- Scripts with hashes being blocked
+
+**Root Cause**: 
+Next.js inline scripts are being blocked by Railway's default Content Security Policy, which doesn't allow `unsafe-inline` script execution.
+
+**Solution Applied**:
+
+1. **Updated `client/next.config.js`** with proper CSP headers:
+```javascript
+async headers() {
+  return [
+    {
+      source: '/(.*)',
+      headers: [
+        {
+          key: 'Content-Security-Policy',
+          value: [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+            "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
+            "font-src 'self' fonts.gstatic.com",
+            "img-src 'self' data: https:",
+            "connect-src 'self' " + (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'),
+          ].join('; ')
+        }
+      ],
+    },
+  ];
+}
+```
+
+2. **Removed static export mode** which was incompatible with Railway's dynamic hosting
+3. **Added proper image domains** for Railway deployment
+4. **Configured security headers** for production environment
+
+**Fix Script**: Run `.\fixscripts\fix-csp-deployment.ps1` for automated deployment
+
+**Verification**:
+- ✅ No CSP errors in browser console
+- ✅ "Loading TCManager..." disappears quickly
+- ✅ Login page displays properly
+- ✅ All JavaScript and CSS loads correctly
+
 ## Getting Help
 
 If you encounter issues not covered in this guide:
@@ -224,4 +274,126 @@ npm run dev
 
 # Start Frontend
 cd frontend && npm start
-``` 
+```
+
+## PowerShell Command Issues
+
+**Issue**: `The token '&&' is not a valid statement separator in this version`
+
+**Solution**: Use `;` instead of `&&` in PowerShell:
+```powershell
+# ❌ Wrong
+cd server && npm run dev
+
+# ✅ Correct  
+cd server; npm run dev
+```
+
+## TypeScript Compilation Errors
+
+**Common Issues**:
+- Missing return statements in async functions
+- Incorrect property references in models
+- Missing imports for validation
+
+**Solution**: 
+- Always add `return` statements in async controller methods
+- Use correct property names from model interfaces
+- Import `validationResult` from `express-validator`
+
+## MongoDB Connection Issues
+
+**Symptoms**:
+- Server fails to start
+- "MongoDB connection failed" errors
+
+**Solutions**:
+1. Check `.env` file in project root
+2. Verify MongoDB URI format
+3. Ensure MongoDB service is running locally
+4. For Railway: Check environment variables in dashboard
+
+## Railway Deployment Issues
+
+### Build Failures
+**Check**: 
+- All dependencies in package.json
+- TypeScript compilation passes locally
+- Environment variables set in Railway dashboard
+
+### Static Export Issues
+**Problem**: `output: 'export'` mode incompatible with Railway
+**Solution**: Remove static export configuration from `next.config.js`
+
+### Environment Variables
+**Required for Railway**:
+- `NODE_ENV=production`
+- `MONGODB_URI=<your_mongodb_connection_string>`
+- `JWT_SECRET=<your_jwt_secret>`
+- `NEXT_PUBLIC_API_URL=<your_railway_app_url>/api`
+
+## Authentication Issues
+
+### JWT Token Problems
+**Check**:
+- JWT_SECRET environment variable
+- Token expiration settings
+- localStorage storage in browser
+
+### Login Redirect Issues
+**Solution**: Verify protected route middleware in `page.tsx` files
+
+## Performance Issues
+
+### Slow Loading
+**Solutions**:
+- Enable image optimization
+- Implement lazy loading
+- Check for memory leaks in React components
+
+### Database Performance
+**Solutions**:
+- Verify indexes are created
+- Optimize query patterns
+- Use pagination for large datasets
+
+## Development Environment Setup
+
+### Node.js Version
+**Requirement**: Node.js >= 18.0.0
+**Check**: `node --version`
+
+### Package Installation
+**Issues**: Version conflicts, peer dependency warnings
+**Solution**: 
+```powershell
+rm -rf node_modules package-lock.json
+npm install
+```
+
+## Browser-Specific Issues
+
+### Safari
+- Clear browser cache completely
+- Enable developer features
+
+### Chrome
+- Disable ad blockers for localhost
+- Check console for security warnings
+
+### Edge/Firefox
+- Enable JavaScript
+- Clear site data and reload
+
+## Network Issues
+
+### API Connection Problems
+**Check**:
+- CORS configuration in server
+- API URL environment variables
+- Network proxy settings
+
+### HTTPS/HTTP Mixed Content
+**Railway Solution**: Always use HTTPS URLs in production environment variables
+
+This troubleshooting guide will be updated as new issues are discovered and resolved. 

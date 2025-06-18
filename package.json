@@ -5,7 +5,7 @@
   "main": "server/dist/index.js",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
-    "build": "npm run install:all && npm run client:build && npm run server:build",
+    "build": "npm run install:all && npm run server:build && npm run client:build",
     "start": "node server/dist/index.js",
     "install:all": "cd server && npm install && cd ../client && npm install",
     "server:dev": "cd server && npm run dev",
@@ -16,9 +16,10 @@
     "server:test": "cd server && npm test",
     "client:test": "cd client && npm test",
     "setup": "npm install && cd server && npm install && cd ../client && npm install",
-    "postinstall": "cd server && npm install && cd ../client && npm install",
+    "postinstall": "npm run install:all",
     "railway:build": "npm run build",
-    "railway:start": "npm start"
+    "railway:start": "npm start",
+    "heroku-postbuild": "npm run build"
   },
   "keywords": [
     "test-management",

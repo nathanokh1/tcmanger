@@ -72,14 +72,15 @@ export const validateProjectCreation = [
     .withMessage('Automation enabled must be a boolean'),
 
   // Validation result handler
-  (req: Request, res: Response, next: NextFunction) => {
+  (req: Request, res: Response, next: NextFunction): void => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors: errors.array()
       });
+      return;
     }
     next();
   }
@@ -163,14 +164,15 @@ export const validateProjectUpdate = [
     .withMessage('Automation enabled must be a boolean'),
 
   // Validation result handler
-  (req: Request, res: Response, next: NextFunction) => {
+  (req: Request, res: Response, next: NextFunction): void => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors: errors.array()
       });
+      return;
     }
     next();
   }
@@ -189,14 +191,15 @@ export const validateTeamMemberOperation = [
     .withMessage('Role must be Owner, Admin, Developer, Tester, or Viewer'),
 
   // Validation result handler
-  (req: Request, res: Response, next: NextFunction) => {
+  (req: Request, res: Response, next: NextFunction): void => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors: errors.array()
       });
+      return;
     }
     next();
   }

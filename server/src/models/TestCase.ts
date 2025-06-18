@@ -229,7 +229,7 @@ TestCaseSchema.virtual('approvalStatus').get(function() {
   if (this.approvalHistory.length === 0) return 'Not Submitted';
   
   const lastApproval = this.approvalHistory[this.approvalHistory.length - 1];
-  return lastApproval.action;
+  return lastApproval?.action || 'Not Submitted';
 });
 
 export const TestCase = mongoose.model<ITestCase>('TestCase', TestCaseSchema); 

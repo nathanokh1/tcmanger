@@ -51,7 +51,9 @@ import {
   Visibility as ViewIcon,
   GetApp as ExportIcon,
   Settings as SettingsIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 interface TestRun {
   _id: string;
@@ -207,315 +209,226 @@ const TestRunsPage: React.FC = () => {
     ));
   };
 
+  const overallStats = {
+    totalRuns: mockTestRuns.length,
+    running: mockTestRuns.filter(tr => tr.status === 'running').length,
+    completed: mockTestRuns.filter(tr => tr.status === 'completed').length,
+    failed: mockTestRuns.filter(tr => tr.status === 'failed').length
+  };
+
   return (
-    <Box sx={{ p: 3 }}>
+    <DashboardLayout>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ 
-          fontWeight: 'bold',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          color: 'transparent'
-        }}>
+        <Typography variant="h4" fontWeight="bold">
           Test Runs
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            sx={{ borderRadius: 2 }}
-          >
-            Refresh
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<ExportIcon />}
-            sx={{ borderRadius: 2 }}
-          >
-            Export Results
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<PlayIcon />}
-            onClick={() => setCreateDialogOpen(true)}
-            sx={{ 
-              borderRadius: 2,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-              }
-            }}
-          >
-            New Test Run
-          </Button>
-        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            textTransform: 'none'
+          }}
+          onClick={() => setCreateDialogOpen(true)}
+        >
+          Create Test Run
+        </Button>
       </Box>
 
-      {/* Summary Cards */}
+      {/* Statistics Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #2196f320 0%, #64b5f620 100%)' }}>
+          <Card sx={{ borderRadius: 3 }}>
             <CardContent>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2196f3' }}>
-                {testRuns.filter(run => run.status === 'running').length}
+              <Typography variant="h4" fontWeight="bold" color="primary">
+                {overallStats.totalRuns}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Running
-              </Typography>
+              <Typography color="text.secondary">Total Runs</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #4caf5020 0%, #81c78420 100%)' }}>
+          <Card sx={{ borderRadius: 3 }}>
             <CardContent>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                {testRuns.filter(run => run.status === 'completed').length}
+              <Typography variant="h4" fontWeight="bold" color="info.main">
+                {overallStats.running}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Completed
-              </Typography>
+              <Typography color="text.secondary">Running</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #75757520 0%, #9e9e9e20 100%)' }}>
+          <Card sx={{ borderRadius: 3 }}>
             <CardContent>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#757575' }}>
-                {testRuns.filter(run => run.status === 'scheduled').length}
+              <Typography variant="h4" fontWeight="bold" color="success.main">
+                {overallStats.completed}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Scheduled
-              </Typography>
+              <Typography color="text.secondary">Completed</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #f4433620 0%, #ff867120 100%)' }}>
+          <Card sx={{ borderRadius: 3 }}>
             <CardContent>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#f44336' }}>
-                {testRuns.filter(run => run.status === 'failed' || run.status === 'aborted').length}
+              <Typography variant="h4" fontWeight="bold" color="error.main">
+                {overallStats.failed}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Failed/Aborted
-              </Typography>
+              <Typography color="text.secondary">Failed</Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Test Runs Table */}
-      <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
-        {loading && <LinearProgress />}
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: 'rgba(102, 126, 234, 0.1)' }}>
-                <TableCell>Test Run</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Progress</TableCell>
-                <TableCell>Results</TableCell>
-                <TableCell>Executor</TableCell>
-                <TableCell>Duration</TableCell>
-                <TableCell>Environment</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {testRuns.map((run) => (
-                <TableRow 
-                  key={run._id} 
-                  hover
-                  sx={{ '&:hover': { backgroundColor: 'rgba(102, 126, 234, 0.05)' } }}
+      {/* Test Runs List */}
+      <Paper sx={{ borderRadius: 3 }}>
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Recent Test Runs
+          </Typography>
+          
+          <Grid container spacing={2}>
+            {mockTestRuns.map((testRun) => (
+              <Grid item xs={12} key={testRun._id}>
+                <Card 
+                  sx={{ 
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    '&:hover': {
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      borderColor: 'primary.main'
+                    },
+                    transition: 'all 0.2s ease'
+                  }}
                 >
-                  <TableCell>
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
-                        {run.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {run.projectId.name} ({run.projectId.key})
-                      </Typography>
-                      <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {run.tags.slice(0, 2).map((tag) => (
+                  <CardContent>
+                    <Grid container spacing={2} alignItems="center">
+                      {/* Test Run Info */}
+                      <Grid item xs={12} md={3}>
+                        <Box>
+                          <Typography variant="h6" fontWeight="bold" gutterBottom>
+                            {testRun._id}
+                          </Typography>
+                          <Typography variant="body1" gutterBottom>
+                            {testRun.name}
+                          </Typography>
                           <Chip
-                            key={tag}
-                            label={tag}
+                            label={testRun.environment}
                             size="small"
                             variant="outlined"
-                            sx={{ fontSize: '0.7rem', height: '20px' }}
+                            color="default"
                           />
-                        ))}
-                        {run.tags.length > 2 && (
-                          <Chip
-                            label={`+${run.tags.length - 2}`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ fontSize: '0.7rem', height: '20px' }}
-                          />
-                        )}
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {getStatusIcon(run.status)}
-                      <Chip
-                        label={run.status}
-                        size="small"
-                        sx={{
-                          backgroundColor: getStatusColor(run.status) + '20',
-                          color: getStatusColor(run.status),
-                          fontWeight: 'bold',
-                          textTransform: 'capitalize'
-                        }}
-                      />
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ minWidth: 100 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="caption">
-                          {run.progress}%
-                        </Typography>
-                        <Typography variant="caption">
-                          {run.totalTests - run.pendingTests}/{run.totalTests}
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={run.progress}
-                        sx={{
-                          height: 6,
-                          borderRadius: 3,
-                          backgroundColor: '#f5f5f5',
-                          '& .MuiLinearProgress-bar': {
-                            borderRadius: 3,
-                            background: `linear-gradient(135deg, ${getStatusColor(run.status)} 0%, ${getStatusColor(run.status)}80 100%)`
-                          }
-                        }}
-                      />
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Grid container spacing={1}>
-                      <Grid item xs={6}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <PassIcon sx={{ fontSize: '1rem', color: '#4caf50' }} />
-                          <Typography variant="caption">{run.passedTests}</Typography>
                         </Box>
                       </Grid>
-                      <Grid item xs={6}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <FailIcon sx={{ fontSize: '1rem', color: '#f44336' }} />
-                          <Typography variant="caption">{run.failedTests}</Typography>
+
+                      {/* Status and Progress */}
+                      <Grid item xs={12} md={3}>
+                        <Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            {getStatusIcon(testRun.status)}
+                            <Chip
+                              label={testRun.status}
+                              size="small"
+                              sx={{
+                                backgroundColor: getStatusColor(testRun.status) + '20',
+                                color: getStatusColor(testRun.status),
+                                fontWeight: 'bold',
+                                textTransform: 'capitalize'
+                              }}
+                            />
+                          </Box>
+                          {testRun.status === 'running' && (
+                            <Box>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                <Typography variant="caption">Progress</Typography>
+                                <Typography variant="caption">{testRun.progress}%</Typography>
+                              </Box>
+                              <LinearProgress 
+                                variant="determinate" 
+                                value={testRun.progress}
+                                sx={{ height: 6, borderRadius: 3 }}
+                              />
+                            </Box>
+                          )}
                         </Box>
                       </Grid>
-                      <Grid item xs={6}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <BlockedIcon sx={{ fontSize: '1rem', color: '#ff9800' }} />
-                          <Typography variant="caption">{run.blockedTests}</Typography>
+
+                      {/* Test Results */}
+                      <Grid item xs={12} md={3}>
+                        <Box>
+                          <Typography variant="body2" fontWeight="bold" gutterBottom>
+                            Results ({testRun.totalTests} tests)
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            {testRun.passedTests > 0 && (
+                              <Chip
+                                icon={<PassIcon />}
+                                label={testRun.passedTests}
+                                size="small"
+                                color="success"
+                                variant="outlined"
+                              />
+                            )}
+                            {testRun.failedTests > 0 && (
+                              <Chip
+                                icon={<FailIcon />}
+                                label={testRun.failedTests}
+                                size="small"
+                                color="error"
+                                variant="outlined"
+                              />
+                            )}
+                            {testRun.blockedTests > 0 && (
+                              <Chip
+                                icon={<BlockedIcon />}
+                                label={testRun.blockedTests}
+                                size="small"
+                                color="warning"
+                                variant="outlined"
+                              />
+                            )}
+                            {testRun.pendingTests > 0 && (
+                              <Chip
+                                icon={<PendingIcon />}
+                                label={testRun.pendingTests}
+                                size="small"
+                                color="default"
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
                         </Box>
                       </Grid>
-                      <Grid item xs={6}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <PendingIcon sx={{ fontSize: '1rem', color: '#757575' }} />
-                          <Typography variant="caption">{run.pendingTests}</Typography>
+
+                      {/* Executor and Time */}
+                      <Grid item xs={12} md={3}>
+                        <Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Avatar sx={{ width: 24, height: 24 }}>
+                              {testRun.executedBy.name.split(' ').map(n => n[0]).join('')}
+                            </Avatar>
+                            <Typography variant="body2" fontWeight="bold">
+                              {testRun.executedBy.name}
+                            </Typography>
+                          </Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Started: {testRun.startTime ? new Date(testRun.startTime).toLocaleString() : 'Not started'}
+                          </Typography>
+                          {testRun.endTime && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              Ended: {new Date(testRun.endTime).toLocaleString()}
+                            </Typography>
+                          )}
                         </Box>
                       </Grid>
                     </Grid>
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                      Pass Rate: {calculatePassRate(run)}%
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
-                        {run.executedBy.name.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="caption" display="block">
-                          {run.executedBy.name}
-                        </Typography>
-                        <Chip
-                          label={run.automationType}
-                          size="small"
-                          variant="outlined"
-                          sx={{ fontSize: '0.6rem', height: '16px', textTransform: 'capitalize' }}
-                        />
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box>
-                      <Typography variant="caption" display="block">
-                        {run.actualDuration ? formatDuration(run.actualDuration) : formatDuration(run.estimatedDuration)}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {run.status === 'running' ? 'Running' : 
-                         run.status === 'scheduled' ? 'Estimated' : 'Actual'}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={run.environment}
-                      size="small"
-                      sx={{
-                        backgroundColor: '#667eea20',
-                        color: '#667eea',
-                        textTransform: 'capitalize'
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Tooltip title="View Details">
-                        <IconButton 
-                          size="small" 
-                          sx={{ color: '#667eea' }}
-                          onClick={() => {
-                            setSelectedRun(run);
-                            setExecutionDialogOpen(true);
-                          }}
-                        >
-                          <ViewIcon />
-                        </IconButton>
-                      </Tooltip>
-                      {run.status === 'scheduled' && (
-                        <Tooltip title="Start Run">
-                          <IconButton 
-                            size="small" 
-                            sx={{ color: '#4caf50' }}
-                            onClick={() => handleStartRun(run._id)}
-                          >
-                            <PlayIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                      {run.status === 'running' && (
-                        <Tooltip title="Stop Run">
-                          <IconButton 
-                            size="small" 
-                            sx={{ color: '#f44336' }}
-                            onClick={() => handleStopRun(run._id)}
-                          >
-                            <StopIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                      <Tooltip title="Settings">
-                        <IconButton size="small" sx={{ color: '#757575' }}>
-                          <SettingsIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
       </Paper>
 
       {/* Create Test Run Dialog */}
@@ -696,7 +609,7 @@ const TestRunsPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </DashboardLayout>
   );
 };
 

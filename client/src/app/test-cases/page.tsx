@@ -49,6 +49,7 @@ import {
   Visibility as ViewIcon,
   GetApp as ExportIcon,
 } from '@mui/icons-material';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 interface TestCase {
   _id: string;
@@ -240,91 +241,72 @@ const TestCasesPage: React.FC = () => {
     }
   };
 
+  const stats = {
+    total: mockTestCases.length,
+    active: mockTestCases.filter(tc => tc.status === 'active').length,
+    automated: mockTestCases.filter(tc => tc.type === 'e2e').length,
+    passed: mockTestCases.filter(tc => tc.lastRun?.status === 'passed').length
+  };
+
   return (
-    <Box sx={{ p: 3 }}>
+    <DashboardLayout>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ 
-          fontWeight: 'bold',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          color: 'transparent'
-        }}>
+        <Typography variant="h4" fontWeight="bold">
           Test Cases
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<ExportIcon />}
-            sx={{ borderRadius: 2 }}
-          >
-            Export
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateDialogOpen(true)}
-            sx={{ 
-              borderRadius: 2,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-              }
-            }}
-          >
-            Create Test Case
-          </Button>
-        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            textTransform: 'none'
+          }}
+          onClick={() => setCreateDialogOpen(true)}
+        >
+          Create Test Case
+        </Button>
       </Box>
 
-      {/* Stats Cards */}
+      {/* Statistics Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #667eea20 0%, #764ba220 100%)' }}>
+          <Card sx={{ borderRadius: 3 }}>
             <CardContent>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#667eea' }}>
-                {totalCount}
+              <Typography variant="h4" fontWeight="bold" color="primary">
+                {stats.total}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total Test Cases
-              </Typography>
+              <Typography color="text.secondary">Total Test Cases</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #4caf5020 0%, #81c78420 100%)' }}>
+          <Card sx={{ borderRadius: 3 }}>
             <CardContent>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                {mockTestCases.filter(tc => tc.lastRun?.status === 'passed').length}
+              <Typography variant="h4" fontWeight="bold" color="success.main">
+                {stats.active}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Passed
-              </Typography>
+              <Typography color="text.secondary">Active</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #f4433620 0%, #ff867120 100%)' }}>
+          <Card sx={{ borderRadius: 3 }}>
             <CardContent>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#f44336' }}>
-                {mockTestCases.filter(tc => tc.lastRun?.status === 'failed').length}
+              <Typography variant="h4" fontWeight="bold" color="info.main">
+                {stats.automated}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Failed
-              </Typography>
+              <Typography color="text.secondary">Automated</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #ff980020 0%, #ffc04720 100%)' }}>
+          <Card sx={{ borderRadius: 3 }}>
             <CardContent>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ff9800' }}>
-                {mockTestCases.filter(tc => tc.lastRun?.status === 'blocked').length}
+              <Typography variant="h4" fontWeight="bold" color="success.main">
+                {Math.round((stats.passed / stats.total) * 100)}%
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Blocked
-              </Typography>
+              <Typography color="text.secondary">Pass Rate</Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -648,7 +630,7 @@ const TestCasesPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </DashboardLayout>
   );
 };
 

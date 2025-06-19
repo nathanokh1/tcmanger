@@ -22,6 +22,7 @@ import {
   TableRow,
   LinearProgress,
   CircularProgress,
+  Divider
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
@@ -35,6 +36,7 @@ import {
   Cancel as FailIcon,
   Warning as BlockedIcon,
 } from '@mui/icons-material';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 interface ReportData {
   overview: {
@@ -203,381 +205,181 @@ const ReportsPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <DashboardLayout>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ 
-          fontWeight: 'bold',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          color: 'transparent'
-        }}>
+        <Typography variant="h4" fontWeight="bold">
           Reports & Analytics
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Time Period</InputLabel>
-            <Select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              label="Time Period"
-            >
-              <MenuItem value="last-week">Last Week</MenuItem>
-              <MenuItem value="last-month">Last Month</MenuItem>
-              <MenuItem value="last-3-months">Last 3 Months</MenuItem>
-              <MenuItem value="last-6-months">Last 6 Months</MenuItem>
-              <MenuItem value="last-year">Last Year</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Project</InputLabel>
-            <Select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              label="Project"
-            >
-              <MenuItem value="all">All Projects</MenuItem>
-              <MenuItem value="ecom">E-Commerce Platform</MenuItem>
-              <MenuItem value="bank">Mobile Banking App</MenuItem>
-              <MenuItem value="api">API Gateway Service</MenuItem>
-            </Select>
-          </FormControl>
-          <Button
-            variant="outlined"
-            startIcon={<ExportIcon />}
-            sx={{ borderRadius: 2 }}
-          >
-            Export Report
-          </Button>
-        </Box>
+        <Button
+          variant="contained"
+          startIcon={<ReportIcon />}
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            textTransform: 'none'
+          }}
+        >
+          Generate Report
+        </Button>
       </Box>
 
-      {/* Overview Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #667eea20 0%, #764ba220 100%)' }}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#667eea' }}>
-                {reportData.overview.totalProjects}
+      {/* Report Cards */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, textAlign: 'center', p: 2 }}>
+            <CardContent>
+              <TrendingUpIcon sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Test Execution Trends
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Projects
+                Analyze test execution patterns over time
               </Typography>
+              <Button 
+                variant="outlined" 
+                size="small" 
+                sx={{ mt: 2 }}
+              >
+                View Report
+              </Button>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #2196f320 0%, #64b5f620 100%)' }}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2196f3' }}>
-                {reportData.overview.totalTestCases.toLocaleString()}
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, textAlign: 'center', p: 2 }}>
+            <CardContent>
+              <PassIcon sx={{ fontSize: 40, color: 'success.main', mb: 2 }} />
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Test Coverage
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Test Cases
+                Comprehensive test coverage analysis
               </Typography>
+              <Button 
+                variant="outlined" 
+                size="small" 
+                sx={{ mt: 2 }}
+              >
+                View Report
+              </Button>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #ff980020 0%, #ffc04720 100%)' }}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ff9800' }}>
-                {reportData.overview.totalTestRuns}
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, textAlign: 'center', p: 2 }}>
+            <CardContent>
+              <TimeIcon sx={{ fontSize: 40, color: 'warning.main', mb: 2 }} />
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Performance Metrics
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Test Runs
+                Test execution performance insights
               </Typography>
+              <Button 
+                variant="outlined" 
+                size="small" 
+                sx={{ mt: 2 }}
+              >
+                View Report
+              </Button>
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #9c27b020 0%, #ba68c820 100%)' }}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#9c27b0' }}>
-                {reportData.overview.automationCoverage}%
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, textAlign: 'center', p: 2 }}>
+            <CardContent>
+              <ReportIcon sx={{ fontSize: 40, color: 'info.main', mb: 2 }} />
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Quality Dashboard
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Automation
+                Overall quality metrics and KPIs
               </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #4caf5020 0%, #81c78420 100%)' }}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                {reportData.overview.passRate}%
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Pass Rate
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <Card sx={{ borderRadius: 3, background: 'linear-gradient(135deg, #f4433620 0%, #ff867120 100%)' }}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#f44336' }}>
-                {reportData.overview.defectRate}%
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Defect Rate
-              </Typography>
+              <Button 
+                variant="outlined" 
+                size="small" 
+                sx={{ mt: 2 }}
+              >
+                View Report
+              </Button>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Charts and Trends */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, borderRadius: 3, height: '400px' }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Test Execution Trends
-            </Typography>
-            <Box sx={{ mt: 3 }}>
-              {reportData.trends.testExecution.map((data, index) => (
-                <Box key={data.month} sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">{data.month}</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                      {Math.round((data.passed / data.executed) * 100)}% Pass Rate
+      {/* Recent Reports */}
+      <Paper sx={{ borderRadius: 3, p: 3 }}>
+        <Typography variant="h6" fontWeight="bold" gutterBottom>
+          Recent Reports
+        </Typography>
+        <Divider sx={{ mb: 2 }} />
+        
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Card sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold">
+                      Weekly Test Execution Report
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Generated on Jan 16, 2024 • 1,245 tests executed
                     </Typography>
                   </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={(data.passed / data.executed) * 100}
-                    sx={{
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: '#f5f5f5',
-                      '& .MuiLinearProgress-bar': {
-                        borderRadius: 4,
-                        background: data.passed / data.executed > 0.9 
-                          ? 'linear-gradient(135deg, #4caf50 0%, #81c784 100%)'
-                          : data.passed / data.executed > 0.8
-                          ? 'linear-gradient(135deg, #ff9800 0%, #ffb74d 100%)'
-                          : 'linear-gradient(135deg, #f44336 0%, #ef5350 100%)'
-                      }
-                    }}
-                  />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Passed: {data.passed}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Failed: {data.failed}
-                    </Typography>
-                  </Box>
+                  <Button variant="outlined" size="small">
+                    Download
+                  </Button>
                 </Box>
-              ))}
-            </Box>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3, borderRadius: 3, height: '400px' }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Automation Progress
-            </Typography>
-            <Box sx={{ mt: 3 }}>
-              {reportData.trends.automation.map((data, index) => (
-                <Box key={data.month} sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2">{data.month}</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                      {Math.round((data.automated / (data.automated + data.manual)) * 100)}% Automated
-                    </Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={(data.automated / (data.automated + data.manual)) * 100}
-                    sx={{
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: '#f5f5f5',
-                      '& .MuiLinearProgress-bar': {
-                        borderRadius: 4,
-                        background: 'linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)'
-                      }
-                    }}
-                  />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Automated: {data.automated}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Manual: {data.manual}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
 
-      {/* Project Metrics and Top Defects */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
-            <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                Project Health Overview
-              </Typography>
-            </Box>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: 'rgba(102, 126, 234, 0.1)' }}>
-                    <TableCell>Project</TableCell>
-                    <TableCell>Test Cases</TableCell>
-                    <TableCell>Automation</TableCell>
-                    <TableCell>Pass Rate</TableCell>
-                    <TableCell>Last Run</TableCell>
-                    <TableCell>Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {reportData.projectMetrics.map((project) => (
-                    <TableRow key={project.projectName} hover>
-                      <TableCell>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
-                          {project.projectName}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {project.testCases}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ minWidth: 100 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                            <Typography variant="caption">
-                              {project.automationRate}%
-                            </Typography>
-                          </Box>
-                          <LinearProgress
-                            variant="determinate"
-                            value={project.automationRate}
-                            sx={{
-                              height: 6,
-                              borderRadius: 3,
-                              backgroundColor: '#f5f5f5',
-                              '& .MuiLinearProgress-bar': {
-                                borderRadius: 3,
-                                background: 'linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)'
-                              }
-                            }}
-                          />
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ minWidth: 100 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                            <Typography variant="caption">
-                              {project.passRate}%
-                            </Typography>
-                          </Box>
-                          <LinearProgress
-                            variant="determinate"
-                            value={project.passRate}
-                            sx={{
-                              height: 6,
-                              borderRadius: 3,
-                              backgroundColor: '#f5f5f5',
-                              '& .MuiLinearProgress-bar': {
-                                borderRadius: 3,
-                                background: project.passRate > 90 
-                                  ? 'linear-gradient(135deg, #4caf50 0%, #81c784 100%)'
-                                  : project.passRate > 80
-                                  ? 'linear-gradient(135deg, #ff9800 0%, #ffb74d 100%)'
-                                  : 'linear-gradient(135deg, #f44336 0%, #ef5350 100%)'
-                              }
-                            }}
-                          />
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(project.lastRun).toLocaleDateString()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={project.status}
-                          size="small"
-                          sx={{
-                            backgroundColor: getStatusColor(project.status) + '20',
-                            color: getStatusColor(project.status),
-                            fontWeight: 'bold',
-                            textTransform: 'capitalize'
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, borderRadius: 3, height: 'fit-content' }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Top Defects
-            </Typography>
-            <Box>
-              {reportData.topDefects.map((defect) => (
-                <Box 
-                  key={defect.id} 
-                  sx={{ 
-                    mb: 2, 
-                    p: 2, 
-                    borderRadius: 2, 
-                    backgroundColor: 'grey.50',
-                    border: '1px solid',
-                    borderColor: 'divider'
-                  }}
-                >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                      {defect.id}
+          <Grid item xs={12}>
+            <Card sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold">
+                      Test Coverage Analysis
                     </Typography>
-                    <Chip
-                      label={defect.severity}
-                      size="small"
-                      sx={{
-                        backgroundColor: getSeverityColor(defect.severity) + '20',
-                        color: getSeverityColor(defect.severity),
-                        fontWeight: 'bold',
-                        fontSize: '0.7rem',
-                        height: '20px'
-                      }}
-                    />
-                  </Box>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    {defect.title}
-                  </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="caption" color="text.secondary">
-                      {defect.project}
+                    <Typography variant="body2" color="text.secondary">
+                      Generated on Jan 15, 2024 • Coverage: 87.5%
                     </Typography>
-                    <Chip
-                      label={defect.status}
-                      size="small"
-                      variant="outlined"
-                      sx={{ fontSize: '0.7rem', height: '20px' }}
-                    />
                   </Box>
+                  <Button variant="outlined" size="small">
+                    Download
+                  </Button>
                 </Box>
-              ))}
-            </Box>
-          </Paper>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Card sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold">
+                      Defect Trend Analysis
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Generated on Jan 14, 2024 • 23 defects identified
+                    </Typography>
+                  </Box>
+                  <Button variant="outlined" size="small">
+                    Download
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-      </Grid>
-    </Box>
+      </Paper>
+    </DashboardLayout>
   );
 };
 

@@ -43,6 +43,7 @@ import {
   Star as StarIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 interface Project {
   _id: string;
@@ -195,28 +196,19 @@ const ProjectsPage: React.FC = () => {
   });
 
   return (
-    <Box sx={{ p: 3 }}>
+    <DashboardLayout>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ 
-          fontWeight: 'bold',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          color: 'transparent'
-        }}>
+        <Typography variant="h4" fontWeight="bold">
           Projects
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setCreateDialogOpen(true)}
-          sx={{ 
-            borderRadius: 2,
+          sx={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-            }
+            textTransform: 'none'
           }}
         >
           Create Project
@@ -224,43 +216,46 @@ const ProjectsPage: React.FC = () => {
       </Box>
 
       {/* Search and Filters */}
-      <Paper sx={{ p: 2, mb: 3, borderRadius: 3 }}>
+      <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={8}>
+          <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               placeholder="Search projects..."
               value={searchTerm}
               onChange={handleSearchChange}
               InputProps={{
-                startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />,
+                startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
               }}
-              sx={{ borderRadius: 2 }}
             />
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={3}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
               <Select
                 value={filterStatus}
-                onChange={(e) => handleFilterChange(e.target.value)}
                 label="Status"
+                onChange={(e) => handleFilterChange(e.target.value)}
               >
-                <MenuItem value="">All Projects</MenuItem>
+                <MenuItem value="">All</MenuItem>
                 <MenuItem value="Active">Active</MenuItem>
                 <MenuItem value="Inactive">Inactive</MenuItem>
                 <MenuItem value="Archived">Archived</MenuItem>
               </Select>
             </FormControl>
           </Grid>
+          <Grid item xs={12} md={3}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Chip label={`${filteredProjects.length} projects`} variant="outlined" />
+            </Box>
+          </Grid>
         </Grid>
       </Paper>
 
       {/* Projects Grid */}
       {loading ? (
-        <Box sx={{ mt: 4 }}>
-          <LinearProgress />
-          <Typography sx={{ mt: 2, textAlign: 'center' }}>Loading projects...</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <Typography>Loading projects...</Typography>
         </Box>
       ) : (
         <Grid container spacing={3}>
@@ -268,57 +263,52 @@ const ProjectsPage: React.FC = () => {
             <Grid item xs={12} md={6} lg={4} key={project._id}>
               <Card 
                 sx={{ 
+                  borderRadius: 3, 
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRadius: 3,
-                  border: '1px solid',
-                  borderColor: 'divider',
                   '&:hover': {
-                    boxShadow: 6,
-                    transform: 'translateY(-2px)',
-                    transition: 'all 0.3s ease-in-out'
-                  }
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                    transform: 'translateY(-2px)'
+                  },
+                  transition: 'all 0.3s ease'
                 }}
               >
                 <CardContent sx={{ flexGrow: 1 }}>
-                  {/* Project Header */}
+                  {/* Header */}
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Box sx={{ flexGrow: 1 }}>
+                      <Typography variant="h6" fontWeight="bold" gutterBottom>
+                        {project.name}
+                      </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
-                          {project.name}
-                        </Typography>
-                        <Chip
-                          label={project.key}
-                          size="small"
-                          sx={{
-                            backgroundColor: '#667eea20',
-                            color: '#667eea',
-                            fontWeight: 'bold'
+                        <Chip 
+                          label={project.key} 
+                          size="small" 
+                          sx={{ 
+                            fontWeight: 'bold',
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            color: 'white'
+                          }} 
+                        />
+                        <Chip 
+                          label={project.status} 
+                          size="small" 
+                          sx={{ 
+                            backgroundColor: getStatusColor(project.status),
+                            color: 'white'
                           }}
                         />
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Chip
-                          label={project.status}
-                          size="small"
-                          sx={{
-                            backgroundColor: getStatusColor(project.status) + '20',
-                            color: getStatusColor(project.status),
-                            fontWeight: 'bold'
-                          }}
-                        />
-                        <Chip
-                          label={project.visibility}
-                          size="small"
+                        <Chip 
+                          label={project.visibility} 
+                          size="small" 
                           variant="outlined"
                         />
                       </Box>
                     </Box>
-                    <IconButton
-                      size="small"
+                    <IconButton 
                       onClick={(e) => handleMenuClick(e, project._id)}
+                      size="small"
                     >
                       <MoreIcon />
                     </IconButton>
@@ -362,7 +352,7 @@ const ProjectsPage: React.FC = () => {
                   <Grid container spacing={2} sx={{ mb: 2 }}>
                     <Grid item xs={6}>
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#667eea' }}>
+                        <Typography variant="h6" fontWeight="bold">
                           {project.statistics.testCaseCount}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -372,35 +362,34 @@ const ProjectsPage: React.FC = () => {
                     </Grid>
                     <Grid item xs={6}>
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
-                          {project.statistics.automationPercentage}%
+                        <Typography variant="h6" fontWeight="bold">
+                          {project.statistics.moduleCount}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Automated
+                          Modules
                         </Typography>
                       </Box>
                     </Grid>
                   </Grid>
 
-                  {/* Progress Bar */}
+                  {/* Automation Progress */}
                   <Box sx={{ mb: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Automation Progress
+                      <Typography variant="body2" color="text.secondary">
+                        Automation
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {project.statistics.automatedTestCount}/{project.statistics.testCaseCount}
+                      <Typography variant="body2" fontWeight="bold">
+                        {project.statistics.automationPercentage}%
                       </Typography>
                     </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={project.statistics.automationPercentage}
-                      sx={{
-                        height: 6,
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={project.statistics.automationPercentage} 
+                      sx={{ 
+                        height: 6, 
                         borderRadius: 3,
-                        backgroundColor: '#f5f5f5',
+                        backgroundColor: 'grey.200',
                         '& .MuiLinearProgress-bar': {
-                          borderRadius: 3,
                           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                         }
                       }}
@@ -409,21 +398,21 @@ const ProjectsPage: React.FC = () => {
 
                   {/* Tags */}
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {project.tags.slice(0, 3).map((tag) => (
-                      <Chip
-                        key={tag}
-                        label={tag}
-                        size="small"
+                    {project.tags.slice(0, 3).map((tag, index) => (
+                      <Chip 
+                        key={index} 
+                        label={tag} 
+                        size="small" 
                         variant="outlined"
-                        sx={{ fontSize: '0.7rem', height: '20px' }}
+                        sx={{ fontSize: '0.7rem' }}
                       />
                     ))}
                     {project.tags.length > 3 && (
-                      <Chip
-                        label={`+${project.tags.length - 3}`}
-                        size="small"
+                      <Chip 
+                        label={`+${project.tags.length - 3}`} 
+                        size="small" 
                         variant="outlined"
-                        sx={{ fontSize: '0.7rem', height: '20px' }}
+                        sx={{ fontSize: '0.7rem' }}
                       />
                     )}
                   </Box>
@@ -476,95 +465,69 @@ const ProjectsPage: React.FC = () => {
       </Menu>
 
       {/* Create Project Dialog */}
-      <Dialog
-        open={createDialogOpen}
+      <Dialog 
+        open={createDialogOpen} 
         onClose={() => setCreateDialogOpen(false)}
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle sx={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white'
-        }}>
-          Create New Project
-        </DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={8}>
+        <DialogTitle>Create New Project</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="Project Name"
                 placeholder="Enter project name"
-                required
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="Project Key"
-                placeholder="e.g., ECOM"
-                required
-                helperText="2-10 characters, uppercase"
+                placeholder="e.g., PROJ"
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Description"
-                placeholder="Describe your project"
                 multiline
                 rows={3}
-                required
+                label="Description"
+                placeholder="Enter project description"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>Visibility</InputLabel>
-                <Select label="Visibility" defaultValue="Public">
+                <Select defaultValue="Public">
                   <MenuItem value="Public">Public</MenuItem>
                   <MenuItem value="Private">Private</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Template</InputLabel>
-                <Select label="Template" defaultValue="">
-                  <MenuItem value="">None</MenuItem>
-                  <MenuItem value="web">Web Application</MenuItem>
-                  <MenuItem value="mobile">Mobile App</MenuItem>
-                  <MenuItem value="api">API Service</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="Tags"
                 placeholder="Enter tags separated by commas"
-                helperText="Tags help organize and categorize projects"
               />
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setCreateDialogOpen(false)}>
-            Cancel
-          </Button>
+        <DialogActions>
+          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
           <Button 
             variant="contained"
-            sx={{ 
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-              }
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
             }}
           >
             Create Project
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </DashboardLayout>
   );
 };
 

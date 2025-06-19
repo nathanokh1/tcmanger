@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "seed:users": "ts-node src/utils/seedUsers.ts",
+    "create:user": "ts-node src/utils/createUser.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",

@@ -4,16 +4,17 @@ import { User, IUser } from '../models/User';
 import { logger } from '../utils/logger';
 
 export class AuthController {
-  async register(req: Request, res: Response) {
+  async register(req: Request, res: Response): Promise<void> {
     try {
       const { email, password, firstName, lastName, role = 'viewer' } = req.body;
 
       // Check if user already exists
       const existingUser = await User.findOne({ email });
       if (existingUser) {
-        return res.status(400).json({ 
+        res.status(400).json({ 
           message: 'User already exists with this email' 
         });
+        return;
       }
 
       // Create new user
@@ -55,27 +56,30 @@ export class AuthController {
         message: 'Registration failed', 
         error: error instanceof Error ? error.message : 'Unknown error' 
       });
+      return;
     }
   }
 
-  async login(req: Request, res: Response) {
+  async login(req: Request, res: Response): Promise<void> {
     try {
       const { email, password } = req.body;
 
       // Find user
       const user = await User.findOne({ email, isActive: true });
       if (!user) {
-        return res.status(401).json({ 
+        res.status(401).json({ 
           message: 'Invalid email or password' 
         });
+        return;
       }
 
       // Check password
       const isPasswordValid = await user.comparePassword(password);
       if (!isPasswordValid) {
-        return res.status(401).json({ 
+        res.status(401).json({ 
           message: 'Invalid email or password' 
         });
+        return;
       }
 
       // Update last login
@@ -111,20 +115,22 @@ export class AuthController {
         message: 'Login failed', 
         error: error instanceof Error ? error.message : 'Unknown error' 
       });
+      return;
     }
   }
 
-  async logout(req: Request, res: Response) {
+  async logout(req: Request, res: Response): Promise<void> {
     // For JWT, logout is handled client-side by removing the token
     res.json({ message: 'Logout successful' });
   }
 
-  async refreshToken(req: Request, res: Response) {
+  async refreshToken(req: Request, res: Response): Promise<void> {
     try {
       const { token } = req.body;
 
       if (!token) {
-        return res.status(401).json({ message: 'Token required' });
+        res.status(401).json({ message: 'Token required' });
+        return;
       }
 
       // Verify existing token
@@ -133,7 +139,8 @@ export class AuthController {
       // Find user
       const user = await User.findById(decoded.userId);
       if (!user || !user.isActive) {
-        return res.status(401).json({ message: 'Invalid token' });
+        res.status(401).json({ message: 'Invalid token' });
+        return;
       }
 
       // Generate new token
@@ -150,16 +157,18 @@ export class AuthController {
     } catch (error) {
       logger.error('Token refresh error:', error);
       res.status(401).json({ message: 'Token refresh failed' });
+      return;
     }
   }
 
-  async getProfile(req: Request, res: Response) {
+  async getProfile(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user?.userId;
       
       const user = await User.findById(userId);
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        res.status(404).json({ message: 'User not found' });
+        return;
       }
 
       res.json({
@@ -179,10 +188,11 @@ export class AuthController {
     } catch (error) {
       logger.error('Get profile error:', error);
       res.status(500).json({ message: 'Failed to get profile' });
+      return;
     }
   }
 
-  async updateProfile(req: Request, res: Response) {
+  async updateProfile(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user?.userId;
       const { firstName, lastName, preferences } = req.body;
@@ -194,7 +204,8 @@ export class AuthController {
       );
 
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        res.status(404).json({ message: 'User not found' });
+        return;
       }
 
       res.json({
@@ -211,23 +222,26 @@ export class AuthController {
     } catch (error) {
       logger.error('Update profile error:', error);
       res.status(500).json({ message: 'Failed to update profile' });
+      return;
     }
   }
 
-  async changePassword(req: Request, res: Response) {
+  async changePassword(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user?.userId;
       const { currentPassword, newPassword } = req.body;
 
       const user = await User.findById(userId);
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        res.status(404).json({ message: 'User not found' });
+        return;
       }
 
       // Verify current password
       const isCurrentPasswordValid = await user.comparePassword(currentPassword);
       if (!isCurrentPasswordValid) {
-        return res.status(400).json({ message: 'Current password is incorrect' });
+        res.status(400).json({ message: 'Current password is incorrect' });
+        return;
       }
 
       // Update password
@@ -240,6 +254,7 @@ export class AuthController {
     } catch (error) {
       logger.error('Change password error:', error);
       res.status(500).json({ message: 'Failed to change password' });
+      return;
     }
   }
 } 

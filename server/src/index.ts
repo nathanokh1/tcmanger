@@ -8,6 +8,7 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 
 import { logger } from './utils/logger';
+import { seedUsers } from './utils/seedUsers';
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
 import projectRoutes from './routes/projects';
@@ -253,6 +254,9 @@ const connectDB = async () => {
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tcmanager';
     await mongoose.connect(mongoURI);
     logger.info('MongoDB connected successfully');
+    
+    // Seed default users on startup
+    await seedUsers();
   } catch (error) {
     logger.error('MongoDB connection error:', error);
     process.exit(1);

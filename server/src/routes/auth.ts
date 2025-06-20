@@ -15,7 +15,8 @@ router.post('/refresh', authController.refreshToken);
 
 // Protected routes
 router.get('/me', authMiddleware, authController.getProfile);
-router.put('/me', authMiddleware, authController.updateProfile);
-router.post('/change-password', authMiddleware, authController.changePassword);
+// TODO: Implement profile update and password change
+// router.put('/me', authMiddleware, authController.updateProfile);
+// router.post('/change-password', authMiddleware, authController.changePassword);
 
 export { router as authRoutes }; 

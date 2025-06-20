@@ -2,11 +2,13 @@ import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
+  _id: mongoose.Types.ObjectId;
   email: string;
   password: string;
   firstName: string;
   lastName: string;
   role: 'admin' | 'qa' | 'developer' | 'viewer';
+  tenantId: string;
   isActive: boolean;
   isEmailVerified: boolean;
   avatar?: string;
@@ -49,6 +51,11 @@ const userSchema = new Schema<IUser>({
     type: String,
     enum: ['admin', 'qa', 'developer', 'viewer'],
     default: 'viewer',
+  },
+  tenantId: {
+    type: String,
+    required: true,
+    index: true,
   },
   isActive: {
     type: Boolean,
@@ -95,6 +102,8 @@ const userSchema = new Schema<IUser>({
 // Index for better query performance
 userSchema.index({ email: 1, isActive: 1 });
 userSchema.index({ role: 1, isActive: 1 });
+userSchema.index({ tenantId: 1, isActive: 1 });
+userSchema.index({ email: 1, tenantId: 1 }, { unique: true });
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {

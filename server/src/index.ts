@@ -134,7 +134,7 @@ app.use((req: any, res, next) => {
   next();
 });
 
-// API Routes
+// API Routes (MUST come before static file serving)
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/testcases', testCaseRoutes);
@@ -142,7 +142,7 @@ app.use('/api/testruns', testRunRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
-// Serve static files from the Next.js app build
+// Serve static files from the Next.js app build (AFTER API routes)
 if (process.env.NODE_ENV === 'production') {
   // Serve Next.js static files
   const clientBuildPath = path.join(__dirname, '../../client/.next/static');
@@ -152,14 +152,14 @@ if (process.env.NODE_ENV === 'production') {
   app.use('/_next/static', express.static(clientBuildPath));
   app.use('/static', express.static(clientBuildPath));
   
-  // Serve public assets
-  app.use(express.static(clientPublicPath));
+  // Serve public assets (avoid conflicts with API routes)
+  app.use('/public', express.static(clientPublicPath));
   
   // Serve the built Next.js app
   const clientDistPath = path.join(__dirname, '../../client/out');
   
-  // Try to serve Next.js static export first
-  app.use(express.static(clientDistPath));
+  // Try to serve Next.js static export first (avoid conflicts with API routes)
+  app.use('/app', express.static(clientDistPath));
   
   // For all non-API routes, serve the Next.js app or fallback HTML
   app.get('*', (req, res) => {

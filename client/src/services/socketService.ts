@@ -56,7 +56,7 @@ class ClientSocketService {
     this.token = token;
     
     const serverUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://tcmanger-production.up.railway.app'
+      ? 'https://tcmanager-production.up.railway.app'
       : 'http://localhost:3000';
 
     console.log(`Connecting to Socket.io server: ${serverUrl}`);

@@ -59,7 +59,10 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3001',
+  origin: process.env.CLIENT_URL || 
+    (process.env.NODE_ENV === 'production' 
+      ? ['https://tcmanager-production.up.railway.app', 'http://localhost:3001']
+      : 'http://localhost:3001'),
   credentials: true,
 }));
 

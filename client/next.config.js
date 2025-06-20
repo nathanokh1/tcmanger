@@ -4,20 +4,23 @@ const nextConfig = {
   swcMinify: true,
   
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'https://tcmanager-production.up.railway.app/api'
+        : 'http://localhost:3000/api'),
   },
 
-  // Enable static export for Railway deployment
-  ...(process.env.NODE_ENV === 'production' && {
-    output: 'export',
-    trailingSlash: true,
-    images: {
-      unoptimized: true,
-    },
-  }),
+  // Disable static export for Railway deployment (we need SSR for API calls)
+  // ...(process.env.NODE_ENV === 'production' && {
+  //   output: 'export',
+  //   trailingSlash: true,
+  //   images: {
+  //     unoptimized: true,
+  //   },
+  // }),
   
   images: {
-    domains: ['localhost', 'tcmanger-production.up.railway.app'],
+    domains: ['localhost', 'tcmanager-production.up.railway.app'],
     remotePatterns: [
       {
         protocol: 'https',

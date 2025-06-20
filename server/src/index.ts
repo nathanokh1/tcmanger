@@ -155,17 +155,22 @@ if (process.env.NODE_ENV === 'production') {
   app.use('/_next/static', express.static(clientBuildPath));
   app.use('/static', express.static(clientBuildPath));
   
-  // Serve public assets (avoid conflicts with API routes)
-  app.use('/public', express.static(clientPublicPath));
+  // Serve public assets
+  app.use(express.static(clientPublicPath));
   
-  // Serve the built Next.js app
+  // Serve the built Next.js app (static export)
   const clientDistPath = path.join(__dirname, '../../client/out');
   
-  // Try to serve Next.js static export first (avoid conflicts with API routes)
-  app.use('/app', express.static(clientDistPath));
+  // Serve Next.js static export
+  app.use(express.static(clientDistPath));
   
   // For all non-API routes, serve the Next.js app or fallback HTML
   app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/') || req.path === '/health') {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    
     const indexPath = path.join(clientDistPath, 'index.html');
     
     // Try to serve the built Next.js index.html

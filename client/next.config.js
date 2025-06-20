@@ -10,14 +10,14 @@ const nextConfig = {
         : 'http://localhost:3000/api'),
   },
 
-  // Disable static export for Railway deployment (we need SSR for API calls)
-  // ...(process.env.NODE_ENV === 'production' && {
-  //   output: 'export',
-  //   trailingSlash: true,
-  //   images: {
-  //     unoptimized: true,
-  //   },
-  // }),
+  // Enable static export for Railway deployment with proper API handling
+  ...(process.env.NODE_ENV === 'production' && {
+    output: 'export',
+    trailingSlash: true,
+    images: {
+      unoptimized: true,
+    },
+  }),
   
   images: {
     domains: ['localhost', 'tcmanager-production.up.railway.app'],

@@ -90,6 +90,13 @@ export class AnalyticsController {
         });
       }
 
+      if (!projectId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Project ID is required'
+        });
+      }
+
       const stats = await analyticsService.getProjectStats(projectId);
 
       return res.json({
@@ -125,7 +132,7 @@ export class AnalyticsController {
       
       const coverage = await analyticsService.getTestCoverageAnalysis(
         userId,
-        projectId as string
+        projectId as string | undefined
       );
 
       return res.json({
@@ -170,7 +177,7 @@ export class AnalyticsController {
 
       const trends = await analyticsService.getPerformanceTrends(
         userId,
-        projectId as string,
+        projectId as string | undefined,
         period
       );
 
@@ -202,6 +209,13 @@ export class AnalyticsController {
         return res.status(401).json({
           success: false,
           message: 'User not authenticated'
+        });
+      }
+
+      if (!projectId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Project ID is required'
         });
       }
 
@@ -365,8 +379,8 @@ export class AnalyticsController {
           averagePassRate: dashboardMetrics.overview.averagePassRate,
           overallCoverage: coverageAnalysis.overallCoverage
         },
-        alerts: [],
-        recommendations: []
+        alerts: [] as Array<{ type: string; message: string }>,
+        recommendations: [] as string[]
       };
 
       // Add alerts based on metrics

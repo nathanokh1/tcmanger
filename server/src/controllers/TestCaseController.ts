@@ -5,6 +5,7 @@ import { Project } from '../models/Project';
 import { Module } from '../models/Module';
 import { Feature } from '../models/Feature';
 import { logger } from '../utils/logger';
+import { Types } from 'mongoose';
 
 // Extended Request interface to include user
 interface AuthRequest extends Request {
@@ -369,7 +370,7 @@ export class TestCaseController {
       // Broadcast creation via Socket.io
       if (req.socketService && testCase.projectId) {
         req.socketService.broadcastToProject(testCase.projectId.toString(), 'testcase-created', {
-          testCaseId: testCase._id.toString(),
+          testCaseId: (testCase._id as any).toString(),
           title: testCase.title,
           createdBy: {
             id: userId,
@@ -437,7 +438,7 @@ export class TestCaseController {
 
       // Update test case
       Object.assign(testCase, req.body);
-      testCase.updatedBy = userId;
+      testCase.updatedBy = new Types.ObjectId(userId);
       testCase.updatedAt = new Date();
 
       await testCase.save();
@@ -478,6 +479,82 @@ export class TestCaseController {
       return res.status(500).json({
         success: false,
         message: 'Failed to update test case',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Delete test case with cache invalidation
+   */
+  static async deleteTestCase(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?._id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated'
+        });
+      }
+
+      const testCase = await TestCase.findById(id).populate('projectId');
+      if (!testCase) {
+        return res.status(404).json({
+          success: false,
+          message: 'Test case not found'
+        });
+      }
+
+      // Check permissions
+      const project = testCase.projectId as any;
+      const canDelete = project.createdBy.toString() === userId ||
+                       project.teamMembers?.some((member: any) => 
+                         member.userId.toString() === userId && 
+                         ['Admin', 'Owner'].includes(member.role)
+                       ) ||
+                       testCase.createdBy.toString() === userId;
+
+      if (!canDelete) {
+        return res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions to delete this test case'
+        });
+      }
+
+      // Delete the test case
+      await TestCase.findByIdAndDelete(id);
+
+      // Invalidate caches
+      if (req.cache) {
+        await TestCaseController.invalidateTestCaseCaches(req.cache, testCase);
+      }
+
+      // Broadcast deletion via Socket.io
+      if (req.socketService) {
+        req.socketService.broadcastToProject(testCase.projectId.toString(), 'testcase-deleted', {
+          testCaseId: id,
+          title: testCase.title,
+          deletedBy: {
+            id: userId,
+            name: `${req.user?.firstName} ${req.user?.lastName}`
+          },
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      logger.info(`Test case ${id} deleted by user ${userId}`);
+      return res.json({
+        success: true,
+        message: 'Test case deleted successfully'
+      });
+
+    } catch (error) {
+      logger.error('Delete test case error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to delete test case',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }

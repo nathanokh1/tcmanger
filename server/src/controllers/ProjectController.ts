@@ -246,7 +246,7 @@ export class ProjectController {
           type: 'success',
           title: 'New Project Created',
           message: `${req.user?.firstName} created project "${project.name}"`,
-          projectId: project._id.toString()
+          projectId: (project._id as any).toString()
         });
       }
 
@@ -325,16 +325,18 @@ export class ProjectController {
         { new: true, runValidators: true }
       ).populate('createdBy', 'name email');
 
-      await updatedProject.populate('createdBy', 'name email');
-      await updatedProject.populate('teamMembers.userId', 'name email');
+      if (updatedProject) {
+        await updatedProject.populate('createdBy', 'name email');
+        await updatedProject.populate('teamMembers.userId', 'name email');
+      }
 
       // Invalidate caches
-      if (updatedProject) {
+      if (updatedProject && id) {
         await ProjectController.invalidateProjectCaches(req.cache, id, updatedProject);
       }
 
       // Broadcast update via Socket.io
-      if (req.socketService) {
+      if (req.socketService && id) {
         req.socketService.broadcastToProject(id, 'project-updated', {
           projectId: id,
           updatedBy: {
@@ -393,7 +395,9 @@ export class ProjectController {
       await Project.findByIdAndDelete(id);
 
       // Invalidate all related caches
-      await this.invalidateProjectCaches(req.cache, id, project);
+      if (id) {
+        await ProjectController.invalidateProjectCaches(req.cache, id, project);
+      }
 
       // Broadcast deletion via Socket.io
       if (req.socketService) {
@@ -688,7 +692,7 @@ export class ProjectController {
   /**
    * Helper method to invalidate project-related caches
    */
-  private async invalidateProjectCaches(cache: any, projectId: string, project: any): Promise<void> {
+  private static async invalidateProjectCaches(cache: any, projectId: string, project: any): Promise<void> {
     if (!cache) return;
 
     try {

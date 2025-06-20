@@ -172,6 +172,44 @@ export class AnalyticsService {
   }
 
   /**
+   * Get real-time project statistics
+   */
+  async getProjectStats(projectId: string): Promise<any> {
+    const cacheKey = `project-stats:${projectId}`;
+    
+    return await cacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const [testCaseCount, testRunCount, automatedCount] = await Promise.all([
+          TestCase.countDocuments({ projectId }),
+          TestRun.countDocuments({ projectId }),
+          TestCase.countDocuments({ projectId, 'automation.isAutomated': true })
+        ]);
+
+        // Get pass rate for last 30 days
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const recentRuns = await TestRun.find({
+          projectId,
+          createdAt: { $gte: thirtyDaysAgo }
+        }).lean();
+
+        const passedRuns = recentRuns.filter(run => run.status === 'Completed').length;
+        const passRate = recentRuns.length > 0 ? (passedRuns / recentRuns.length) * 100 : 0;
+
+        return {
+          testCaseCount,
+          testRunCount,
+          automatedCount,
+          automationCoverage: testCaseCount > 0 ? (automatedCount / testCaseCount) * 100 : 0,
+          passRate30Days: Math.round(passRate),
+          lastUpdated: new Date().toISOString()
+        };
+      },
+      { ttl: 180 } // Cache for 3 minutes
+    );
+  }
+
+  /**
    * Get real-time test execution metrics
    */
   async getRealTimeMetrics(projectId: string): Promise<any> {
@@ -183,18 +221,18 @@ export class AnalyticsService {
         // Get current running test runs
         const runningTests = await TestRun.find({
           projectId,
-          status: 'Running'
-        }).populate('testCaseId', 'title priority').lean();
+          status: 'In Progress'
+        }).populate('testCases', 'title priority').lean();
 
         // Get recent test results (last 24 hours)
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const recentResults = await TestRun.find({
           projectId,
-          executedAt: { $gte: yesterday }
-        }).sort({ executedAt: -1 }).limit(50).lean();
+          createdAt: { $gte: yesterday }
+        }).sort({ createdAt: -1 }).limit(50).lean();
 
         // Calculate pass rate for last 24 hours
-        const passCount = recentResults.filter(r => r.status === 'Passed').length;
+        const passCount = recentResults.filter(r => r.status === 'Completed').length;
         const passRate = recentResults.length > 0 ? (passCount / recentResults.length) * 100 : 0;
 
         // Get failure trends
@@ -207,9 +245,9 @@ export class AnalyticsService {
           failuresByHour,
           currentTests: runningTests.map(test => ({
             id: test._id,
-            testCase: test.testCaseId,
-            startTime: test.executedAt,
-            duration: Date.now() - test.executedAt.getTime()
+            testCase: test.testCases,
+            startTime: test.createdAt,
+            duration: Date.now() - test.createdAt.getTime()
           }))
         };
       },
@@ -298,7 +336,7 @@ export class AnalyticsService {
               }
             }
           },
-          { $sort: { automationCoverage: -1 } }
+          { $sort: { automationCoverage: -1 as const } }
         ];
 
         const results = await TestCase.aggregate(pipeline);
@@ -717,7 +755,7 @@ export class AnalyticsService {
   }
 
   private getCoverageRecommendations(results: any[]): string[] {
-    const recommendations = [];
+    const recommendations: string[] = [];
     
     results.forEach(item => {
       if (item.automationCoverage < 30) {

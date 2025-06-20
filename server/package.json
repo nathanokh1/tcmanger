@@ -1,7 +1,7 @@
 {
   "name": "tcmanager-server",
-  "version": "1.0.0",
-  "description": "TCManager Backend API",
+  "version": "1.0.1",
+  "description": "TCManager Backend API - Updated with JWT fixes",
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon --exec ts-node src/index.ts",

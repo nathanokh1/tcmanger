@@ -17,18 +17,7 @@ git add client/next.config.js
 git add server/src/index.ts
 
 Write-Host "Committing emergency frontend restoration..." -ForegroundColor Yellow
-git commit -m "🚨 EMERGENCY FIX: Restore Next.js frontend functionality
-
-PROBLEM: Previous changes broke frontend serving
-- Users saw fallback HTML instead of login/dashboard
-
-SOLUTION:
-✅ Re-enabled Next.js static export for Railway
-✅ Fixed static file serving configuration  
-✅ Restored proper routing for login/dashboard/admin portals
-✅ API routes still protected and functional
-
-RESULT: Login page and all dashboards should be restored"
+git commit -m "🚨 EMERGENCY FIX: Restore Next.js frontend functionality - Re-enabled static export for Railway - Fixed static file serving - Restored login/dashboard/admin portals"
 
 Write-Host "Pushing emergency fix..." -ForegroundColor Yellow
 git push origin master

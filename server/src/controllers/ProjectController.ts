@@ -6,6 +6,8 @@ import { Feature } from '../models/Feature';
 import { TestCase } from '../models/TestCase';
 import { User } from '../models/User';
 import { Types } from 'mongoose';
+import { logger } from '../utils/logger';
+import { CacheService } from '../services/cacheService';
 
 // Extended Request interface to include user
 interface AuthRequest extends Request {
@@ -14,7 +16,15 @@ interface AuthRequest extends Request {
     id: string;
     email: string;
     role: string;
+    firstName?: string;
+    lastName?: string;
   };
+  socketService?: {
+    sendNotification: (notification: any) => void;
+    broadcastToProject: (projectId: string, event: string, data: any) => void;
+  };
+  cacheService?: CacheService;
+  cache?: any;
 }
 
 export class ProjectController {
@@ -23,7 +33,21 @@ export class ProjectController {
   static async getAllProjects(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const userId = req.user?._id;
+      const userRole = req.user?.role;
+      const cacheKey = `projects:user:${userId}:role:${userRole}`;
       
+      // Try to get from cache first
+      const cachedProjects = await req.cache?.get(cacheKey, { ttl: 300 }); // 5 minutes
+      if (cachedProjects) {
+        logger.info(`Projects retrieved from cache for user ${userId}`);
+        return res.json({
+          success: true,
+          data: cachedProjects,
+          cached: true,
+          timestamp: new Date().toISOString()
+        });
+      }
+
       // Find projects where user is a team member or has access
       const projects = await Project.find({
         $or: [
@@ -54,13 +78,18 @@ export class ProjectController {
         })
       );
 
+      // Cache the results
+      await req.cache?.set(cacheKey, projectsWithStats, { ttl: 300 });
+      
+      logger.info(`${projectsWithStats.length} projects retrieved for user ${userId}`);
       return res.json({
         success: true,
         data: projectsWithStats,
-        message: 'Projects retrieved successfully'
+        cached: false,
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error fetching projects:', error);
+      logger.error('Error fetching projects:', error);
       return res.status(500).json({
         success: false,
         message: 'Error fetching projects',
@@ -74,6 +103,19 @@ export class ProjectController {
     try {
       const { id } = req.params;
       const userId = req.user?._id;
+      const cacheKey = `project:${id}:user:${userId}`;
+
+      // Try to get from cache first
+      const cachedProject = await req.cache?.get(cacheKey, { ttl: 600 }); // 10 minutes
+      if (cachedProject) {
+        logger.info(`Project ${id} retrieved from cache for user ${userId}`);
+        return res.json({
+          success: true,
+          data: cachedProject,
+          cached: true,
+          timestamp: new Date().toISOString()
+        });
+      }
 
       const project = await Project.findById(id)
         .populate('createdBy', 'name email')
@@ -118,13 +160,18 @@ export class ProjectController {
         }
       };
 
+      // Cache the result
+      await req.cache?.set(cacheKey, projectWithStats, { ttl: 600 });
+
+      logger.info(`Project ${id} retrieved for user ${userId}`);
       return res.json({
         success: true,
         data: projectWithStats,
-        message: 'Project retrieved successfully'
+        cached: false,
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Error fetching project:', error);
+      logger.error('Error fetching project:', error);
       return res.status(500).json({
         success: false,
         message: 'Error fetching project',
@@ -182,12 +229,35 @@ export class ProjectController {
 
       await project.save();
 
+      await project.populate('createdBy', 'name email');
+      await project.populate('teamMembers.userId', 'name email');
+
+      // Invalidate relevant caches
+      await req.cache?.del(`projects:user:${userId}:role:${req.user?.role}`);
+      
+      // Also invalidate admin cache if user is not admin
+      if (req.user?.role !== 'admin') {
+        await req.cache?.del(`projects:user:${userId}:role:admin`);
+      }
+
+      // Broadcast to other users via Socket.io
+      if (req.socketService) {
+        req.socketService.sendNotification({
+          type: 'success',
+          title: 'New Project Created',
+          message: `${req.user?.firstName} created project "${project.name}"`,
+          projectId: project._id.toString()
+        });
+      }
+
+      logger.info(`Project created: ${project.name} by user ${userId}`);
       return res.status(201).json({
         success: true,
-        data: project
+        data: project,
+        message: 'Project created successfully'
       });
     } catch (error) {
-      console.error('Error creating project:', error);
+      logger.error('Error creating project:', error);
       return res.status(500).json({ 
         success: false, 
         message: 'Internal server error' 
@@ -255,12 +325,35 @@ export class ProjectController {
         { new: true, runValidators: true }
       ).populate('createdBy', 'name email');
 
+      await updatedProject.populate('createdBy', 'name email');
+      await updatedProject.populate('teamMembers.userId', 'name email');
+
+      // Invalidate caches
+      if (updatedProject) {
+        await ProjectController.invalidateProjectCaches(req.cache, id, updatedProject);
+      }
+
+      // Broadcast update via Socket.io
+      if (req.socketService) {
+        req.socketService.broadcastToProject(id, 'project-updated', {
+          projectId: id,
+          updatedBy: {
+            id: userId,
+            name: `${req.user?.firstName} ${req.user?.lastName}`
+          },
+          changes: req.body,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      logger.info(`Project ${id} updated by user ${userId}`);
       return res.json({
         success: true,
-        data: updatedProject
+        data: updatedProject,
+        message: 'Project updated successfully'
       });
     } catch (error) {
-      console.error('Error updating project:', error);
+      logger.error('Error updating project:', error);
       return res.status(500).json({ 
         success: false, 
         message: 'Internal server error' 
@@ -299,12 +392,26 @@ export class ProjectController {
 
       await Project.findByIdAndDelete(id);
 
+      // Invalidate all related caches
+      await this.invalidateProjectCaches(req.cache, id, project);
+
+      // Broadcast deletion via Socket.io
+      if (req.socketService) {
+        req.socketService.sendNotification({
+          type: 'warning',
+          title: 'Project Deleted',
+          message: `Project "${project.name}" has been deleted`,
+          projectId: id
+        });
+      }
+
+      logger.info(`Project ${id} deleted by user ${userId}`);
       return res.json({
         success: true,
         message: 'Project deleted successfully'
       });
     } catch (error) {
-      console.error('Error deleting project:', error);
+      logger.error('Error deleting project:', error);
       return res.status(500).json({ 
         success: false, 
         message: 'Internal server error' 
@@ -575,6 +682,36 @@ export class ProjectController {
         success: false, 
         message: 'Internal server error' 
       });
+    }
+  }
+
+  /**
+   * Helper method to invalidate project-related caches
+   */
+  private async invalidateProjectCaches(cache: any, projectId: string, project: any): Promise<void> {
+    if (!cache) return;
+
+    try {
+      // Invalidate specific project cache
+      await cache.del(`project:${projectId}:stats`);
+      
+      // Invalidate project lists for all members
+      const allUserIds = [
+        project.createdBy.toString(),
+        ...project.teamMembers.map((member: any) => member.userId.toString())
+      ];
+
+      for (const userId of allUserIds) {
+        await cache.del(`projects:user:${userId}:role:admin`);
+        await cache.del(`projects:user:${userId}:role:manager`);
+        await cache.del(`projects:user:${userId}:role:tester`);
+        await cache.del(`projects:user:${userId}:role:viewer`);
+        await cache.del(`project:${projectId}:user:${userId}`);
+      }
+
+      logger.debug(`Invalidated caches for project ${projectId}`);
+    } catch (error) {
+      logger.error('Error invalidating project caches:', error);
     }
   }
 } 

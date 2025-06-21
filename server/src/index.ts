@@ -147,37 +147,31 @@ app.use('/api/analytics', analyticsRoutes);
 
 // Serve static files from the Next.js app build (AFTER API routes)
 if (process.env.NODE_ENV === 'production') {
-  // Serve Next.js static files
-  const clientBuildPath = path.join(__dirname, '../../client/.next/static');
-  const clientPublicPath = path.join(__dirname, '../../client/public');
-  
-  // Serve Next.js static assets
-  app.use('/_next/static', express.static(clientBuildPath));
-  app.use('/static', express.static(clientBuildPath));
-  
-  // Serve public assets
-  app.use(express.static(clientPublicPath));
-  
   // Serve the built Next.js app (static export)
   const clientDistPath = path.join(__dirname, '../../client/out');
   
-  // Serve Next.js static export
-  app.use(express.static(clientDistPath));
+  // First, try to serve static files from Next.js build
+  app.use(express.static(clientDistPath, { 
+    index: false, // Don't serve index.html automatically
+    maxAge: '1h'  // Cache static assets
+  }));
   
-  // For all non-API routes, serve the Next.js app or fallback HTML
+  // Handle all routes (including /login) - serve Next.js pages
   app.get('*', (req, res) => {
-    // Skip API routes
+    // Skip API routes and health check
     if (req.path.startsWith('/api/') || req.path === '/health') {
       return res.status(404).json({ error: 'API endpoint not found' });
     }
     
+    // For Next.js static export, try to serve the specific route file
     const indexPath = path.join(clientDistPath, 'index.html');
     
-    // Try to serve the built Next.js index.html
-    res.sendFile(indexPath, (err) => {
-      if (err) {
-        // Fallback to a functional web app if Next.js build doesn't exist
-        res.send(`
+    // Check if the Next.js build exists
+    if (require('fs').existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      // Fallback HTML if Next.js build doesn't exist
+      res.send(`
           <!DOCTYPE html>
           <html lang="en">
             <head>

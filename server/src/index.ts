@@ -168,160 +168,71 @@ if (process.env.NODE_ENV === 'production') {
     
     // Check if the Next.js build exists
     if (require('fs').existsSync(indexPath)) {
-      res.sendFile(indexPath);
+      return res.sendFile(indexPath);
     } else {
       // Fallback HTML if Next.js build doesn't exist
-      res.send(`
-          <!DOCTYPE html>
-          <html lang="en">
-            <head>
-              <meta charset="utf-8" />
-              <link rel="icon" href="/favicon.ico" />
-              <meta name="viewport" content="width=device-width, initial-scale=1" />
-              <meta name="theme-color" content="#000000" />
-              <title>TCManager - Test Case Management</title>
-              <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-              <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-              <script src="https://unpkg.com/@mui/material@latest/umd/material-ui.production.min.js"></script>
-              <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
-              <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-              <style>
-                body {
-                  margin: 0;
-                  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                  min-height: 100vh;
-                }
-                .app-container {
-                  padding: 20px;
-                  max-width: 1200px;
-                  margin: 0 auto;
-                }
-                .card {
-                  background: white;
-                  border-radius: 8px;
-                  padding: 24px;
-                  margin: 20px 0;
-                  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                }
-                .header {
-                  text-align: center;
-                  color: white;
-                  margin-bottom: 40px;
-                }
-                .nav-button {
-                  background: #1976d2;
-                  color: white;
-                  border: none;
-                  padding: 12px 24px;
-                  margin: 8px;
-                  border-radius: 4px;
-                  cursor: pointer;
-                  font-size: 16px;
-                }
-                .nav-button:hover {
-                  background: #1565c0;
-                }
-                .feature-grid {
-                  display: grid;
-                  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                  gap: 20px;
-                  margin: 20px 0;
-                }
-              </style>
-            </head>
-            <body>
-              <div class="app-container">
-                <div class="header">
-                  <h1>🧪 TCManager</h1>
-                  <h2>Advanced Test Case Management Platform</h2>
-                  <p>Full-Stack Application Running on Railway</p>
-                  <p>✅ Real-time Features Enabled with Socket.io</p>
-                  <p>⚡ Performance Optimized with Redis Caching</p>
-                </div>
-                
-                <div class="card">
-                  <h3>🚀 Platform Status</h3>
-                  <p><strong>Backend API:</strong> ✅ Running on Railway</p>
-                  <p><strong>Real-time Communication:</strong> ✅ Socket.io Enabled</p>
-                  <p><strong>Performance Cache:</strong> ✅ Redis Caching System</p>
-                  <p><strong>Database:</strong> Ready for MongoDB connection</p>
-                  <p><strong>Authentication:</strong> JWT-based auth system ready</p>
-                  <p><strong>Health Check:</strong> <a href="/health" target="_blank">/health</a></p>
-                </div>
-
-                <div class="card">
-                  <h3>📊 Available API Endpoints</h3>
-                  <ul>
-                    <li><strong>Authentication:</strong> /api/auth (login, register, profile)</li>
-                    <li><strong>Projects:</strong> /api/projects (CRUD operations)</li>
-                    <li><strong>Test Cases:</strong> /api/testcases (full test management)</li>
-                    <li><strong>Test Runs:</strong> /api/testruns (execution tracking)</li>
-                    <li><strong>Users:</strong> /api/users (user management)</li>
-                    <li><strong>Analytics:</strong> /api/analytics (advanced reporting & dashboards)</li>
-                    <li><strong>Real-time:</strong> Socket.io connection for live updates</li>
-                    <li><strong>Cache Management:</strong> /api/cache/stats, /api/cache/flush</li>
-                  </ul>
-                </div>
-
-                <div class="feature-grid">
-                  <div class="card">
-                    <h4>🔐 Authentication Ready</h4>
-                    <p>JWT-based authentication system with role-based access control</p>
-                  </div>
-                  <div class="card">
-                    <h4>📝 Test Case Management</h4>
-                    <p>Complete test case authoring with steps, automation scripts, and approvals</p>
-                  </div>
-                  <div class="card">
-                    <h4>🔄 Real-time Updates</h4>
-                    <p>Live test execution tracking, collaboration, and notifications via Socket.io</p>
-                  </div>
-                  <div class="card">
-                    <h4>⚡ High Performance</h4>
-                    <p>Redis caching for blazing-fast API responses and optimized queries</p>
-                  </div>
-                  <div class="card">
-                    <h4>📊 Analytics Dashboard</h4>
-                    <p>Real-time reporting with charts, trends, and performance metrics</p>
-                  </div>
-                  <div class="card">
-                    <h4>🔍 Advanced Search</h4>
-                    <p>Lightning-fast search with intelligent filtering and caching</p>
-                  </div>
-                </div>
-
-                <div class="card">
-                  <h3>🔄 Real-time Features</h3>
-                  <p>The platform now supports:</p>
-                  <ul>
-                    <li>Live test execution monitoring</li>
-                    <li>Real-time collaboration on test cases</li>
-                    <li>Instant notifications</li>
-                    <li>Multi-user synchronization</li>
-                    <li>Typing indicators</li>
-                    <li>Project member presence</li>
-                  </ul>
-                </div>
-
-                <div class="card">
-                  <h3>⚡ Performance Features</h3>
-                  <p>Optimized for speed and scalability:</p>
-                  <ul>
-                    <li>Redis caching for API responses</li>
-                    <li>Intelligent query optimization</li>
-                    <li>Session management and real-time event caching</li>
-                    <li>Advanced analytics with cached aggregations</li>
-                    <li>Sub-second response times</li>
-                    <li>Horizontal scaling support</li>
-                  </ul>
-                </div>
-              </div>
-            </body>
-          </html>
-        `);
-      }
-    });
+      return res.status(200).send(`
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>TCManager - Loading...</title>
+            <style>
+              body {
+                margin: 0;
+                font-family: Arial, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+              }
+              .container {
+                text-align: center;
+                color: white;
+                padding: 40px;
+                background: rgba(255,255,255,0.1);
+                border-radius: 12px;
+                backdrop-filter: blur(10px);
+              }
+              .loading {
+                font-size: 18px;
+                margin: 20px 0;
+              }
+              .refresh-btn {
+                background: #1976d2;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 16px;
+                margin-top: 20px;
+              }
+              .refresh-btn:hover {
+                background: #1565c0;
+              }
+            </style>
+            <script>
+              setTimeout(() => {
+                window.location.reload();
+              }, 3000);
+            </script>
+          </head>
+          <body>
+            <div class="container">
+              <h1>🔄 TCManager Loading...</h1>
+              <div class="loading">Building Next.js frontend...</div>
+              <p>This page will refresh automatically in 3 seconds</p>
+              <button class="refresh-btn" onclick="window.location.reload()">
+                Refresh Now
+              </button>
+            </div>
+          </body>
+        </html>
+      `);
+    }
   });
 } else {
   // Development mode - API only

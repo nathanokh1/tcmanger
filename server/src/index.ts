@@ -156,14 +156,14 @@ if (process.env.NODE_ENV === 'production') {
     maxAge: '1h'  // Cache static assets
   }));
   
-  // Handle all routes (including /login) - serve Next.js pages
+  // Handle all routes (including /admin) - serve Next.js pages
   app.get('*', (req, res) => {
     // Skip API routes and health check
     if (req.path.startsWith('/api/') || req.path === '/health') {
       return res.status(404).json({ error: 'API endpoint not found' });
     }
     
-    // For Next.js static export, try to serve the specific route file
+    // For Next.js static export, serve the index.html for all routes (SPA behavior)
     const indexPath = path.join(clientDistPath, 'index.html');
     
     // Check if the Next.js build exists

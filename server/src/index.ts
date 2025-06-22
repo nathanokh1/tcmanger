@@ -75,25 +75,47 @@ app.use(cacheService.middleware(300)); // 5 minute default TTL
 
 app.use('/api/', limiter);
 
-// Health check endpoint with Socket.io and cache status
+// Health check endpoint (simple and robust)
 app.get('/health', async (req, res) => {
-  const connectedUsers = socketService ? socketService.getConnectedUsersCount() : 0;
-  const cacheStats = await cacheService.getStats();
-  
+  // Simple health check that always works
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
-    realtime: {
-      enabled: !!socketService,
-      connectedUsers
-    },
-    cache: {
-      enabled: cacheService.isAvailable(),
-      stats: cacheStats
-    }
+    version: '1.0.0',
+    message: 'TCManager API is running'
   });
+});
+
+// Detailed health check with services (optional)
+app.get('/api/health/detailed', async (req, res) => {
+  try {
+    const connectedUsers = socketService ? socketService.getConnectedUsersCount() : 0;
+    const cacheStats = await cacheService.getStats();
+    
+    res.status(200).json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      realtime: {
+        enabled: !!socketService,
+        connectedUsers
+      },
+      cache: {
+        enabled: cacheService.isAvailable(),
+        stats: cacheStats
+      }
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'ERROR',
+      timestamp: new Date().toISOString(),
+      message: 'Some services are not available',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 // Cache statistics endpoint

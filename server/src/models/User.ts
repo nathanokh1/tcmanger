@@ -7,7 +7,7 @@ export interface IUser extends Document {
   password: string;
   firstName: string;
   lastName: string;
-  role: 'admin' | 'qa' | 'developer' | 'viewer';
+  role: 'admin' | 'instance_admin' | 'qa' | 'developer' | 'viewer';
   tenantId: string;
   isActive: boolean;
   isEmailVerified: boolean;
@@ -49,7 +49,7 @@ const userSchema = new Schema<IUser>({
   },
   role: {
     type: String,
-    enum: ['admin', 'qa', 'developer', 'viewer'],
+    enum: ['admin', 'instance_admin', 'qa', 'developer', 'viewer'],
     default: 'viewer',
   },
   tenantId: {

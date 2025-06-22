@@ -8,21 +8,24 @@ import jwt from 'jsonwebtoken';
 const router = Router();
 
 // Middleware to check admin permissions
-const requireAdmin = async (req: any, res: Response, next: any) => {
+const requireAdmin = async (req: any, res: Response, next: any): Promise<void> => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      res.status(401).json({ message: 'Authentication required' });
+      return;
     }
 
     const user = await User.findById(req.user.id);
     if (!user || (user.role !== 'admin' && user.role !== 'instance_admin')) {
-      return res.status(403).json({ message: 'Admin access required' });
+      res.status(403).json({ message: 'Admin access required' });
+      return;
     }
 
     next();
   } catch (error) {
     logger.error('Admin authorization error:', error);
-    return res.status(500).json({ message: 'Authorization check failed' });
+    res.status(500).json({ message: 'Authorization check failed' });
+    return;
   }
 };
 
@@ -102,26 +105,30 @@ router.post('/invite', auth, requireAdmin, async (req: any, res: Response): Prom
     const tempPassword = Math.random().toString(36).slice(-8) + 'A1!';
     const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
-    // Create new user
-    const newUser = new User({
+    // Create new user with optional fields
+    const userData: any = {
       firstName,
       lastName,
       email,
       password: hashedPassword,
       role: role || 'viewer',
       tenantId,
-      invitedBy,
       isActive: true,
-      mustChangePassword: true,
       createdAt: new Date(),
       updatedAt: new Date()
-    });
+    };
 
+    // Add optional fields if they exist
+    if (invitedBy) {
+      userData.invitedBy = invitedBy;
+    }
+
+    const newUser = new User(userData);
     const savedUser = await newUser.save();
 
     // Remove password from response
     const userResponse = savedUser.toObject();
-    delete userResponse.password;
+    const { password, ...userWithoutPassword } = userResponse;
 
     // TODO: Send invitation email with temporary password
     logger.info(`User invited: ${email} by ${req.user.email}`);
@@ -129,7 +136,7 @@ router.post('/invite', auth, requireAdmin, async (req: any, res: Response): Prom
     res.status(201).json({
       success: true,
       message: 'User invited successfully',
-      data: userResponse,
+      data: userWithoutPassword,
       tempPassword // In production, this would be sent via email only
     });
     return;

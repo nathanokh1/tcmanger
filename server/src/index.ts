@@ -59,11 +59,37 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 
-    (process.env.NODE_ENV === 'production' 
-      ? ['https://tcmanager-production.up.railway.app', 'http://localhost:3001']
-      : 'http://localhost:3001'),
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    // In production, allow Railway domains and localhost
+    if (process.env.NODE_ENV === 'production') {
+      const allowedOrigins = [
+        'https://tcmanger-production.up.railway.app',
+        'https://tcmanager-production.up.railway.app', // backup for typos
+        'http://localhost:3001',
+        'http://localhost:3000'
+      ];
+      
+      if (allowedOrigins.includes(origin) || origin.includes('railway.app')) {
+        return callback(null, true);
+      } else {
+        console.log('CORS blocked origin:', origin);
+        return callback(new Error('Not allowed by CORS'), false);
+      }
+    } else {
+      // Development - allow localhost
+      if (origin.includes('localhost')) {
+        return callback(null, true);  
+      }
+    }
+    
+    callback(null, true); // Allow all in development
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
 app.use(compression());

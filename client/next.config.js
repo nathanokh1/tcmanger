@@ -6,7 +6,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 
       (process.env.NODE_ENV === 'production' 
-        ? 'https://tcmanager-production.up.railway.app/api'
+        ? 'https://tcmanger-production.up.railway.app/api'
         : 'http://localhost:3000/api'),
   },
 
@@ -21,7 +21,7 @@ const nextConfig = {
   }),
   
   images: {
-    domains: ['localhost', 'tcmanager-production.up.railway.app'],
+    domains: ['localhost', 'tcmanger-production.up.railway.app'],
     remotePatterns: [
       {
         protocol: 'https',

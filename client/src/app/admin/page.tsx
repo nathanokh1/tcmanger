@@ -32,6 +32,8 @@ import {
   Tab,
   Tabs,
   Badge,
+  CircularProgress,
+  Snackbar,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -56,12 +58,20 @@ interface User {
   firstName: string;
   lastName: string;
   email: string;
-  role: 'admin' | 'qa' | 'developer' | 'viewer';
+  role: 'admin' | 'instance_admin' | 'qa' | 'developer' | 'viewer';
   isActive: boolean;
   lastLogin?: Date;
   createdAt: Date;
   invitedBy?: string;
-  projects: string[];
+  projects?: string[];
+}
+
+interface UserStats {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  roleBreakdown: { _id: string; count: number }[];
+  recentUsers: User[];
 }
 
 interface InstanceSettings {
@@ -98,10 +108,14 @@ function CustomTabPanel(props: TabPanelProps) {
 const AdminPortalPage: React.FC = () => {
   const [currentTab, setCurrentTab] = useState(0);
   const [users, setUsers] = useState<User[]>([]);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Instance settings state
   const [instanceSettings, setInstanceSettings] = useState<InstanceSettings>({
@@ -128,62 +142,48 @@ const AdminPortalPage: React.FC = () => {
     message: ''
   });
 
-  // Mock data for demonstration - TODO: Replace with real API calls
-  const mockUsers: User[] = [
-    {
-      _id: '1',
-      firstName: 'John',
-      lastName: 'Admin',
-      email: 'john.admin@acme.com',
-      role: 'admin',
-      isActive: true,
-      lastLogin: new Date('2024-01-20T10:30:00Z'),
-      createdAt: new Date('2024-01-01T00:00:00Z'),
-      projects: ['PROJ-1', 'PROJ-2']
-    },
-    {
-      _id: '2',
-      firstName: 'Jane',
-      lastName: 'Tester',
-      email: 'jane.tester@acme.com',
-      role: 'qa',
-      isActive: true,
-      lastLogin: new Date('2024-01-19T15:45:00Z'),
-      createdAt: new Date('2024-01-05T00:00:00Z'),
-      invitedBy: 'john.admin@acme.com',
-      projects: ['PROJ-1']
-    },
-    {
-      _id: '3',
-      firstName: 'Bob',
-      lastName: 'Developer',
-      email: 'bob.dev@acme.com',
-      role: 'developer',
-      isActive: true,
-      lastLogin: new Date('2024-01-18T09:15:00Z'),
-      createdAt: new Date('2024-01-10T00:00:00Z'),
-      invitedBy: 'john.admin@acme.com',
-      projects: ['PROJ-2']
-    },
-    {
-      _id: '4',
-      firstName: 'Alice',
-      lastName: 'Viewer',
-      email: 'alice.viewer@acme.com',
-      role: 'viewer',
-      isActive: false,
-      createdAt: new Date('2024-01-15T00:00:00Z'),
-      invitedBy: 'john.admin@acme.com',
-      projects: []
+  // API helper function
+  const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+    const token = localStorage.getItem('token');
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+    
+    const response = await fetch(`${apiUrl}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : '',
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Network error' }));
+      throw new Error(errorData.message || `HTTP ${response.status}`);
     }
-  ];
+
+    return response.json();
+  };
+
+  // Load users and statistics
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const [usersResponse, statsResponse] = await Promise.all([
+        apiCall('/users'),
+        apiCall('/users/stats')
+      ]);
+
+      setUsers(usersResponse.data || []);
+      setUserStats(statsResponse.data || null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load users');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // TODO: Replace with actual API call
-    setTimeout(() => {
-      setUsers(mockUsers);
-      setLoading(false);
-    }, 1000);
+    loadUsers();
   }, []);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -191,488 +191,508 @@ const AdminPortalPage: React.FC = () => {
   };
 
   const handleInviteUser = async () => {
-    // TODO: Implement actual API call to send invitation
-    console.log('Inviting user:', inviteForm);
-    
-    // Simulate invitation
-    const newUser: User = {
-      _id: Date.now().toString(),
-      ...inviteForm,
-      isActive: false, // Pending activation
-      createdAt: new Date(),
-      invitedBy: 'current-admin@acme.com',
-      projects: []
-    };
-    
-    setUsers(prev => [...prev, newUser]);
-    setInviteDialogOpen(false);
-    setInviteForm({
-      email: '',
-      firstName: '',
-      lastName: '',
-      role: 'viewer',
-      message: ''
-    });
+    try {
+      setActionLoading(true);
+      const response = await apiCall('/users/invite', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: inviteForm.email,
+          firstName: inviteForm.firstName,
+          lastName: inviteForm.lastName,
+          role: inviteForm.role
+        })
+      });
+
+      setSuccess(`User invited successfully! Temporary password: ${response.tempPassword}`);
+      setInviteDialogOpen(false);
+      setInviteForm({ email: '', firstName: '', lastName: '', role: 'viewer', message: '' });
+      loadUsers(); // Refresh the user list
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to invite user');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const handleToggleUserStatus = (userId: string) => {
-    setUsers(prev => 
-      prev.map(user => 
-        user._id === userId 
-          ? { ...user, isActive: !user.isActive }
-          : user
-      )
-    );
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setUserDialogOpen(true);
   };
 
-  const handleDeleteUser = (userId: string) => {
-    if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      setUsers(prev => prev.filter(user => user._id !== userId));
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      setActionLoading(true);
+      await apiCall(`/users/${selectedUser._id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          firstName: selectedUser.firstName,
+          lastName: selectedUser.lastName,
+          role: selectedUser.role,
+          isActive: selectedUser.isActive
+        })
+      });
+
+      setSuccess('User updated successfully');
+      setUserDialogOpen(false);
+      setSelectedUser(null);
+      loadUsers(); // Refresh the user list
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update user');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleUserStatus = async (userId: string) => {
+    try {
+      setActionLoading(true);
+      await apiCall(`/users/${userId}/toggle-status`, {
+        method: 'PATCH'
+      });
+
+      setSuccess('User status updated successfully');
+      loadUsers(); // Refresh the user list
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update user status');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      await apiCall(`/users/${userId}`, {
+        method: 'DELETE'
+      });
+
+      setSuccess('User deleted successfully');
+      loadUsers(); // Refresh the user list
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete user');
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return '#d32f2f';
-      case 'qa': return '#1976d2';
-      case 'developer': return '#388e3c';
-      case 'viewer': return '#757575';
-      default: return '#757575';
+      case 'admin':
+      case 'instance_admin':
+        return 'error';
+      case 'qa':
+        return 'warning';
+      case 'developer':
+        return 'info';
+      default:
+        return 'default';
     }
   };
 
   const getStatusChip = (user: User) => {
-    if (!user.isActive) {
-      return <Chip label="Inactive" size="small" color="error" />;
+    if (user.isActive) {
+      return <Chip label="Active" color="success" size="small" />;
+    } else {
+      return <Chip label="Inactive" color="default" size="small" />;
     }
-    if (!user.lastLogin) {
-      return <Chip label="Pending" size="small" color="warning" />;
-    }
-    return <Chip label="Active" size="small" color="success" />;
   };
 
-  const stats = {
-    totalUsers: users.length,
-    activeUsers: users.filter(u => u.isActive).length,
-    pendingUsers: users.filter(u => !u.lastLogin && u.isActive).length,
-    adminUsers: users.filter(u => u.role === 'admin').length,
-  };
+  const handleCloseError = () => setError(null);
+  const handleCloseSuccess = () => setSuccess(null);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <CircularProgress />
+        </Box>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold">
-            Instance Administration
+      <Box sx={{ width: '100%' }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1" fontWeight="bold">
+            Instance Admin Portal
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Manage users, settings, and configuration for {instanceSettings.companyName}
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<PersonAddIcon />}
-          onClick={() => setInviteDialogOpen(true)}
-          sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            textTransform: 'none'
-          }}
-        >
-          Invite User
-        </Button>
-      </Box>
-
-      {/* Quick Stats */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#1976d2', mr: 2 }}>
-                  <PeopleIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h5" fontWeight="bold">
-                    {stats.totalUsers}
-                  </Typography>
-                  <Typography color="text.secondary">Total Users</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#4caf50', mr: 2 }}>
-                  <ActivateIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h5" fontWeight="bold">
-                    {stats.activeUsers}
-                  </Typography>
-                  <Typography color="text.secondary">Active Users</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#ff9800', mr: 2 }}>
-                  <EmailIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h5" fontWeight="bold">
-                    {stats.pendingUsers}
-                  </Typography>
-                  <Typography color="text.secondary">Pending</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar sx={{ bgcolor: '#d32f2f', mr: 2 }}>
-                  <SecurityIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h5" fontWeight="bold">
-                    {stats.adminUsers}
-                  </Typography>
-                  <Typography color="text.secondary">Administrators</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Tabs */}
-      <Paper sx={{ borderRadius: 3 }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={currentTab} onChange={handleTabChange}>
-            <Tab label="User Management" icon={<PeopleIcon />} iconPosition="start" />
-            <Tab label="Instance Settings" icon={<SettingsIcon />} iconPosition="start" />
-            <Tab label="Security & Permissions" icon={<SecurityIcon />} iconPosition="start" />
-            <Tab label="Usage Analytics" icon={<AnalyticsIcon />} iconPosition="start" />
-          </Tabs>
+          <Button
+            variant="contained"
+            startIcon={<PersonAddIcon />}
+            onClick={() => setInviteDialogOpen(true)}
+            disabled={actionLoading}
+          >
+            Invite User
+          </Button>
         </Box>
 
-        {/* User Management Tab */}
-        <CustomTabPanel value={currentTab} index={0}>
-          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">User Management</Typography>
-            <Box>
-              <Button
-                startIcon={<UploadIcon />}
-                variant="outlined"
-                sx={{ mr: 1 }}
-              >
-                Import Users
-              </Button>
-              <Button
-                startIcon={<DownloadIcon />}
-                variant="outlined"
-              >
-                Export Users
-              </Button>
-            </Box>
-          </Box>
-
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: 'rgba(102, 126, 234, 0.1)' }}>
-                  <TableCell>User</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Last Login</TableCell>
-                  <TableCell>Projects</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user._id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar sx={{ mr: 2, bgcolor: getRoleColor(user.role) }}>
-                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body1" fontWeight="medium">
-                            {user.firstName} {user.lastName}
-                          </Typography>
-                          {user.invitedBy && (
-                            <Typography variant="caption" color="text.secondary">
-                              Invited by {user.invitedBy}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={user.role.toUpperCase()} 
-                        size="small" 
-                        sx={{ 
-                          bgcolor: getRoleColor(user.role),
-                          color: 'white',
-                          fontWeight: 'bold'
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>{getStatusChip(user)}</TableCell>
-                    <TableCell>
-                      {user.lastLogin 
-                        ? new Date(user.lastLogin).toLocaleDateString()
-                        : 'Never'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      <Badge badgeContent={user.projects.length} color="primary">
-                        <PeopleIcon color="action" />
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip title="Edit User">
-                        <IconButton 
-                          size="small" 
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setUserDialogOpen(true);
-                          }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={user.isActive ? "Deactivate" : "Activate"}>
-                        <IconButton 
-                          size="small" 
-                          onClick={() => handleToggleUserStatus(user._id)}
-                          color={user.isActive ? "error" : "success"}
-                        >
-                          {user.isActive ? <BlockIcon /> : <ActivateIcon />}
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Send Email">
-                        <IconButton size="small">
-                          <EmailIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete User">
-                        <IconButton 
-                          size="small" 
-                          color="error"
-                          onClick={() => handleDeleteUser(user._id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CustomTabPanel>
-
-        {/* Instance Settings Tab */}
-        <CustomTabPanel value={currentTab} index={1}>
-          <Typography variant="h6" gutterBottom>Instance Configuration</Typography>
-          
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Configure your instance settings. Changes will affect all users in your organization.
-          </Alert>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Card sx={{ p: 2 }}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                  Company Information
-                </Typography>
-                <TextField
-                  fullWidth
-                  label="Company Name"
-                  value={instanceSettings.companyName}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="Domain"
-                  value={instanceSettings.domain}
-                  disabled
-                  sx={{ mb: 2 }}
-                />
-                <Button variant="outlined" startIcon={<UploadIcon />}>
-                  Upload Logo
-                </Button>
+        {/* Stats Cards */}
+        {userStats && (
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <PeopleIcon color="primary" sx={{ mr: 2 }} />
+                    <Box>
+                      <Typography variant="h6">{userStats.totalUsers}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Total Users
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
               </Card>
             </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Card sx={{ p: 2 }}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                  User Registration
-                </Typography>
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Registration Policy</InputLabel>
-                  <Select value={instanceSettings.allowSelfRegistration ? 'open' : 'invite'}>
-                    <MenuItem value="invite">Invite Only</MenuItem>
-                    <MenuItem value="open">Allow Self Registration</MenuItem>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <ActivateIcon color="success" sx={{ mr: 2 }} />
+                    <Box>
+                      <Typography variant="h6">{userStats.activeUsers}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Active Users
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <BlockIcon color="warning" sx={{ mr: 2 }} />
+                    <Box>
+                      <Typography variant="h6">{userStats.inactiveUsers}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Inactive Users
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <SecurityIcon color="info" sx={{ mr: 2 }} />
+                    <Box>
+                      <Typography variant="h6">
+                        {userStats.roleBreakdown.find(r => r._id === 'admin')?.count || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Admins
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        )}
+
+        {/* Tabs */}
+        <Paper sx={{ width: '100%' }}>
+          <Tabs
+            value={currentTab}
+            onChange={handleTabChange}
+            indicatorColor="primary"
+            textColor="primary"
+            variant="fullWidth"
+          >
+            <Tab
+              icon={<PeopleIcon />}
+              label="User Management"
+              iconPosition="start"
+            />
+            <Tab
+              icon={<SettingsIcon />}
+              label="Instance Settings"
+              iconPosition="start"
+            />
+            <Tab
+              icon={<SecurityIcon />}
+              label="Security & Permissions"
+              iconPosition="start"
+            />
+            <Tab
+              icon={<AnalyticsIcon />}
+              label="Usage Analytics"
+              iconPosition="start"
+            />
+          </Tabs>
+
+          {/* Tab Content */}
+          <CustomTabPanel value={currentTab} index={0}>
+            {/* User Management Table */}
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>User</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Role</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Last Login</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user._id}>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Avatar sx={{ mr: 2 }}>
+                            {user.firstName[0]}{user.lastName[0]}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="subtitle2">
+                              {user.firstName} {user.lastName}
+                            </Typography>
+                            {user.invitedBy && (
+                              <Typography variant="caption" color="text.secondary">
+                                Invited by {user.invitedBy}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={user.role}
+                          color={getRoleColor(user.role)}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{getStatusChip(user)}</TableCell>
+                      <TableCell>
+                        {user.lastLogin
+                          ? new Date(user.lastLogin).toLocaleDateString()
+                          : 'Never'
+                        }
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title="Edit User">
+                          <IconButton
+                            onClick={() => handleEditUser(user)}
+                            disabled={actionLoading}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={user.isActive ? 'Deactivate' : 'Activate'}>
+                          <IconButton
+                            onClick={() => handleToggleUserStatus(user._id)}
+                            disabled={actionLoading}
+                          >
+                            {user.isActive ? <BlockIcon /> : <ActivateIcon />}
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete User">
+                          <IconButton
+                            onClick={() => handleDeleteUser(user._id)}
+                            disabled={actionLoading}
+                            color="error"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CustomTabPanel>
+
+          <CustomTabPanel value={currentTab} index={1}>
+            <Typography variant="h6" gutterBottom>
+              Instance Settings
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Instance settings functionality will be implemented in the next phase.
+            </Typography>
+          </CustomTabPanel>
+
+          <CustomTabPanel value={currentTab} index={2}>
+            <Typography variant="h6" gutterBottom>
+              Security & Permissions
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Security and permissions management will be implemented in the next phase.
+            </Typography>
+          </CustomTabPanel>
+
+          <CustomTabPanel value={currentTab} index={3}>
+            <Typography variant="h6" gutterBottom>
+              Usage Analytics
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Usage analytics dashboard will be implemented in the next phase.
+            </Typography>
+          </CustomTabPanel>
+        </Paper>
+
+        {/* Invite User Dialog */}
+        <Dialog open={inviteDialogOpen} onClose={() => setInviteDialogOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Invite New User</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="First Name"
+                  fullWidth
+                  value={inviteForm.firstName}
+                  onChange={(e) => setInviteForm({ ...inviteForm, firstName: e.target.value })}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Last Name"
+                  fullWidth
+                  value={inviteForm.lastName}
+                  onChange={(e) => setInviteForm({ ...inviteForm, lastName: e.target.value })}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Email Address"
+                  type="email"
+                  fullWidth
+                  value={inviteForm.email}
+                  onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Role</InputLabel>
+                  <Select
+                    value={inviteForm.role}
+                    onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value as User['role'] })}
+                  >
+                    <MenuItem value="viewer">Viewer</MenuItem>
+                    <MenuItem value="developer">Developer</MenuItem>
+                    <MenuItem value="qa">QA Tester</MenuItem>
+                    <MenuItem value="admin">Admin</MenuItem>
                   </Select>
                 </FormControl>
-                <TextField
-                  fullWidth
-                  label="Maximum Users"
-                  type="number"
-                  value={instanceSettings.maxUsers}
-                />
-              </Card>
+              </Grid>
             </Grid>
-          </Grid>
-        </CustomTabPanel>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setInviteDialogOpen(false)} disabled={actionLoading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleInviteUser}
+              variant="contained"
+              disabled={actionLoading || !inviteForm.email || !inviteForm.firstName || !inviteForm.lastName}
+              startIcon={actionLoading ? <CircularProgress size={20} /> : <SendIcon />}
+            >
+              Send Invitation
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-        {/* Security Tab */}
-        <CustomTabPanel value={currentTab} index={2}>
-          <Typography variant="h6" gutterBottom>Security & Permissions</Typography>
-          
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Configure security settings and role-based permissions for your instance.
+        {/* Edit User Dialog */}
+        <Dialog open={userDialogOpen} onClose={() => setUserDialogOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Edit User</DialogTitle>
+          <DialogContent>
+            {selectedUser && (
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="First Name"
+                    fullWidth
+                    value={selectedUser.firstName}
+                    onChange={(e) => setSelectedUser({ ...selectedUser, firstName: e.target.value })}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Last Name"
+                    fullWidth
+                    value={selectedUser.lastName}
+                    onChange={(e) => setSelectedUser({ ...selectedUser, lastName: e.target.value })}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Email Address"
+                    type="email"
+                    fullWidth
+                    value={selectedUser.email}
+                    disabled
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Role</InputLabel>
+                    <Select
+                      value={selectedUser.role}
+                      onChange={(e) => setSelectedUser({ ...selectedUser, role: e.target.value as User['role'] })}
+                    >
+                      <MenuItem value="viewer">Viewer</MenuItem>
+                      <MenuItem value="developer">Developer</MenuItem>
+                      <MenuItem value="qa">QA Tester</MenuItem>
+                      <MenuItem value="admin">Admin</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setUserDialogOpen(false)} disabled={actionLoading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateUser}
+              variant="contained"
+              disabled={actionLoading}
+              startIcon={actionLoading ? <CircularProgress size={20} /> : <EditIcon />}
+            >
+              Update User
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Snackbar for messages */}
+        <Snackbar
+          open={!!error}
+          autoHideDuration={6000}
+          onClose={handleCloseError}
+        >
+          <Alert onClose={handleCloseError} severity="error" sx={{ width: '100%' }}>
+            {error}
           </Alert>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Card sx={{ p: 2 }}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                  Authentication Settings
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box>
-                    <Typography variant="body2">Email Verification Required</Typography>
-                    <Button variant={instanceSettings.requireEmailVerification ? 'contained' : 'outlined'}>
-                      {instanceSettings.requireEmailVerification ? 'Enabled' : 'Disabled'}
-                    </Button>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2">Two-Factor Authentication</Typography>
-                    <Button variant="outlined">Configure 2FA</Button>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2">Session Timeout</Typography>
-                    <TextField size="small" label="Hours" defaultValue="24" type="number" />
-                  </Box>
-                </Box>
-              </Card>
-            </Grid>
-          </Grid>
-        </CustomTabPanel>
+        </Snackbar>
 
-        {/* Analytics Tab */}
-        <CustomTabPanel value={currentTab} index={3}>
-          <Typography variant="h6" gutterBottom>Usage Analytics</Typography>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <Card sx={{ p: 2, textAlign: 'center' }}>
-                <Typography variant="h4" color="primary">2,847</Typography>
-                <Typography variant="body2">Total Test Cases</Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card sx={{ p: 2, textAlign: 'center' }}>
-                <Typography variant="h4" color="success.main">156</Typography>
-                <Typography variant="body2">Test Runs This Month</Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card sx={{ p: 2, textAlign: 'center' }}>
-                <Typography variant="h4" color="warning.main">89%</Typography>
-                <Typography variant="body2">API Usage</Typography>
-              </Card>
-            </Grid>
-          </Grid>
-        </CustomTabPanel>
-      </Paper>
-
-      {/* Invite User Dialog */}
-      <Dialog open={inviteDialogOpen} onClose={() => setInviteDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Invite New User</DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            <TextField
-              fullWidth
-              label="Email Address"
-              type="email"
-              value={inviteForm.email}
-              onChange={(e) => setInviteForm(prev => ({ ...prev, email: e.target.value }))}
-              sx={{ mb: 2 }}
-            />
-            <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="First Name"
-                  value={inviteForm.firstName}
-                  onChange={(e) => setInviteForm(prev => ({ ...prev, firstName: e.target.value }))}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Last Name"
-                  value={inviteForm.lastName}
-                  onChange={(e) => setInviteForm(prev => ({ ...prev, lastName: e.target.value }))}
-                />
-              </Grid>
-            </Grid>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Role</InputLabel>
-              <Select
-                value={inviteForm.role}
-                onChange={(e) => setInviteForm(prev => ({ ...prev, role: e.target.value as User['role'] }))}
-              >
-                <MenuItem value="viewer">Viewer - Read-only access</MenuItem>
-                <MenuItem value="developer">Developer - Can view and comment</MenuItem>
-                <MenuItem value="qa">QA Tester - Can create and execute tests</MenuItem>
-                <MenuItem value="admin">Administrator - Full access</MenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              label="Personal Message (Optional)"
-              multiline
-              rows={3}
-              value={inviteForm.message}
-              onChange={(e) => setInviteForm(prev => ({ ...prev, message: e.target.value }))}
-              placeholder="Welcome to our TCManager instance..."
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={() => setInviteDialogOpen(false)}>Cancel</Button>
-          <Button 
-            variant="contained" 
-            onClick={handleInviteUser}
-            startIcon={<SendIcon />}
-            sx={{ 
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            }}
-          >
-            Send Invitation
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Snackbar
+          open={!!success}
+          autoHideDuration={6000}
+          onClose={handleCloseSuccess}
+        >
+          <Alert onClose={handleCloseSuccess} severity="success" sx={{ width: '100%' }}>
+            {success}
+          </Alert>
+        </Snackbar>
+      </Box>
     </DashboardLayout>
   );
 };

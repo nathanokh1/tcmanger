@@ -172,55 +172,55 @@ if (process.env.NODE_ENV === 'production') {
     } else {
       // Fallback HTML if Next.js build doesn't exist
       return res.status(200).send(`
-        <!DOCTYPE html>
-        <html lang="en">
-          <head>
-            <meta charset="utf-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
             <title>TCManager - Loading...</title>
-            <style>
-              body {
-                margin: 0;
+              <style>
+                body {
+                  margin: 0;
                 font-family: Arial, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  min-height: 100vh;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-              }
+                }
               .container {
-                text-align: center;
-                color: white;
+                  text-align: center;
+                  color: white;
                 padding: 40px;
                 background: rgba(255,255,255,0.1);
                 border-radius: 12px;
                 backdrop-filter: blur(10px);
-              }
+                }
               .loading {
                 font-size: 18px;
                 margin: 20px 0;
               }
               .refresh-btn {
-                background: #1976d2;
-                color: white;
-                border: none;
-                padding: 12px 24px;
+                  background: #1976d2;
+                  color: white;
+                  border: none;
+                  padding: 12px 24px;
                 border-radius: 6px;
-                cursor: pointer;
-                font-size: 16px;
+                  cursor: pointer;
+                  font-size: 16px;
                 margin-top: 20px;
-              }
+                }
               .refresh-btn:hover {
-                background: #1565c0;
-              }
-            </style>
+                  background: #1565c0;
+                }
+              </style>
             <script>
               setTimeout(() => {
                 window.location.reload();
               }, 3000);
             </script>
-          </head>
-          <body>
+            </head>
+            <body>
             <div class="container">
               <h1>🔄 TCManager Loading...</h1>
               <div class="loading">Building Next.js frontend...</div>
@@ -228,11 +228,11 @@ if (process.env.NODE_ENV === 'production') {
               <button class="refresh-btn" onclick="window.location.reload()">
                 Refresh Now
               </button>
-            </div>
-          </body>
-        </html>
-      `);
-    }
+              </div>
+            </body>
+          </html>
+        `);
+      }
   });
 } else {
   // Development mode - API only

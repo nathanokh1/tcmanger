@@ -46,7 +46,7 @@ export class AuthController {
 
       // Validate input
       if (!email || !password) {
-        res.status(400).json({
+        res.status(400).json({ 
           success: false,
           message: 'Email and password are required'
         } as AuthResponse);
@@ -153,7 +153,7 @@ export class AuthController {
 
     } catch (error) {
       logger.error('Login error:', error);
-      res.status(500).json({
+      res.status(500).json({ 
         success: false,
         message: 'An internal server error occurred during login'
       } as AuthResponse);
@@ -221,7 +221,7 @@ export class AuthController {
 
     } catch (error) {
       logger.error('Registration error:', error);
-      res.status(500).json({
+      res.status(500).json({ 
         success: false,
         message: 'An internal server error occurred during registration'
       } as AuthResponse);
@@ -292,7 +292,7 @@ export class AuthController {
   public async logout(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user?.userId;
-
+      
       if (userId) {
         // Clear cached session
         await cacheService.del(`user_session:${userId}`);

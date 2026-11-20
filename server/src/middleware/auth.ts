@@ -6,9 +6,12 @@ import { logger } from '../utils/logger';
 interface AuthRequest extends Request {
   user?: {
     id: string;
+    _id: string;
     email: string;
     role: string;
     tenantId: string;
+    firstName: string;
+    lastName: string;
   };
 }
 
@@ -24,10 +27,19 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction):
       return;
     }
 
-    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key';
-    const decoded = jwt.verify(token, jwtSecret) as any;
-    
-    const user = await User.findById(decoded.id).select('-password');
+    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret';
+    const decoded = jwt.verify(token, jwtSecret) as { id?: string; userId?: string };
+    const userId = decoded.userId || decoded.id;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid token.'
+      });
+      return;
+    }
+
+    const user = await User.findById(userId).select('-password');
     if (!user || !user.isActive) {
       res.status(401).json({
         success: false,
@@ -38,9 +50,12 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction):
 
     req.user = {
       id: user._id.toString(),
+      _id: user._id.toString(),
       email: user.email,
       role: user.role,
-      tenantId: user.tenantId
+      tenantId: user.tenantId,
+      firstName: user.firstName,
+      lastName: user.lastName
     };
 
     next();

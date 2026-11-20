@@ -69,7 +69,7 @@ export class SocketService {
           return next(new Error('Authentication required'));
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key') as any;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
         
         socket.userId = decoded.userId;
         socket.userEmail = decoded.email;

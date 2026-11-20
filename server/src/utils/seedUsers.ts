@@ -20,14 +20,14 @@ export const defaultUsers: DefaultUser[] = [
   },
   {
     email: 'developer@tcmanager.com', 
-    password: 'Dev123!',
+    password: 'Dev1234!',
     firstName: 'John',
     lastName: 'Developer',
     role: 'developer'
   },
   {
     email: 'qa@tcmanager.com',
-    password: 'QA123!',
+    password: 'QA12345!',
     firstName: 'Jane',
     lastName: 'Tester',
     role: 'qa'
@@ -61,6 +61,7 @@ export async function seedUsers(): Promise<void> {
       if (!existingUser) {
         const user = new User({
           ...userData,
+          tenantId: process.env.DEFAULT_TENANT || 'dev',
           isEmailVerified: true,
           isActive: true,
           preferences: {

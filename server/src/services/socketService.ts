@@ -2,6 +2,7 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server } from 'http';
 import jwt from 'jsonwebtoken';
 import { logger } from '../utils/logger';
+import { getJwtSecret } from '../utils/jwtSecret';
 
 export interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -69,7 +70,7 @@ export class SocketService {
           return next(new Error('Authentication required'));
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key') as any;
+        const decoded = jwt.verify(token, getJwtSecret()) as any;
         
         socket.userId = decoded.userId;
         socket.userEmail = decoded.email;

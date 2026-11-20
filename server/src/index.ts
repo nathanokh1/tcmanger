@@ -10,6 +10,7 @@ import { createServer } from 'http';
 
 import { logger } from './utils/logger';
 import { seedUsers } from './utils/seedUsers';
+import { getJwtSecret } from './utils/jwtSecret';
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
 import projectRoutes from './routes/projects';
@@ -277,9 +278,13 @@ const connectDB = async () => {
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tcmanager';
     await mongoose.connect(mongoURI);
     logger.info('MongoDB connected successfully');
-    
-    // Seed default users on startup
-    await seedUsers();
+
+    // Known local accounts are for development only. Production must create users itself.
+    if (process.env.NODE_ENV !== 'production') {
+      await seedUsers();
+    } else {
+      logger.info('Skipping default user seed in production');
+    }
   } catch (error) {
     logger.error('MongoDB connection error:', error);
     process.exit(1);
@@ -309,6 +314,7 @@ process.on('SIGINT', gracefulShutdown);
 
 // Start server
 const startServer = async () => {
+  getJwtSecret();
   await connectDB();
   
   // Initialize Socket.io service after database connection

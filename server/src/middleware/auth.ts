@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
 import { logger } from '../utils/logger';
+import { getJwtSecret } from '../utils/jwtSecret';
 
 interface AuthRequest extends Request {
   user?: {
@@ -27,7 +28,7 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction):
       return;
     }
 
-    const jwtSecret = process.env.JWT_SECRET || 'fallback-secret';
+    const jwtSecret = getJwtSecret();
     const decoded = jwt.verify(token, jwtSecret) as { id?: string; userId?: string };
     const userId = decoded.userId || decoded.id;
 

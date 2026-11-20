@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { User, IUser } from '../models/User';
 import { logger } from '../utils/logger';
+import { getJwtSecret } from '../utils/jwtSecret';
 import { cacheService } from '../services/cacheService';
 
 interface LoginRequest {
@@ -107,13 +108,13 @@ export class AuthController {
 
       const token = (jwt as any).sign(
         tokenPayload,
-        process.env.JWT_SECRET || 'fallback-secret',
+        getJwtSecret(),
         { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
       );
 
       const refreshToken = (jwt as any).sign(
         { userId: user._id.toString() },
-        process.env.JWT_SECRET || 'fallback-secret',
+        getJwtSecret(),
         { expiresIn: '7d' }
       );
 
@@ -245,7 +246,7 @@ export class AuthController {
       }
 
       // Verify refresh token
-      const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET || 'fallback-secret') as any;
+      const decoded = jwt.verify(refreshToken, getJwtSecret()) as any;
       
       // Find user
       const user = await User.findById(decoded.userId) as IUser;
@@ -265,7 +266,7 @@ export class AuthController {
           role: user.role,
           tenantId: user.tenantId
         },
-        process.env.JWT_SECRET || 'fallback-secret',
+        getJwtSecret(),
         { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
       );
 

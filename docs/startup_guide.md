@@ -212,7 +212,7 @@ curl http://localhost:3000/health
 curl http://localhost:3001
 ```
 
-The API seeds these local accounts on an empty database (`tenantId` `dev`). Passwords must be at least 8 characters:
+When `NODE_ENV` is not `production`, the API seeds these local accounts on an empty database (`tenantId` `dev`). Production does not seed them. Passwords must be at least 8 characters:
 
 ```
 admin@tcmanager.com / Admin123!
@@ -221,7 +221,7 @@ qa@tcmanager.com / QA12345!
 viewer@tcmanager.com / View123!
 ```
 
-Login tokens are signed with `JWT_SECRET` or the development fallback `fallback-secret`. Protected routes read the `userId` claim from that token.
+Login tokens are signed with `JWT_SECRET`. Outside production, a development fallback is used when that variable is unset. Production refuses to start without `JWT_SECRET`. Protected routes read the `userId` claim from that token.
 
 ---
 
